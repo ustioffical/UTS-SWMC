@@ -1,0 +1,482 @@
+{% extends "master.html" %}
+{% load static %}
+
+{% block title %}Map{% endblock %}
+
+<!-- Custom Plugins CSS -->
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/jquery.dataTables.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    {#    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/flatpickr/flatpickr.min.css" %}">#}
+    {#    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select/bootstrap-select.min.css" %}">#}
+{% endblock %}
+<!--End Custom Plugins CSS -->
+
+{% block LeafletLink %}
+    <!--Google Key-->
+    <script type="text/javascript"
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDyN4NVgaHV6-AbuAdWqSBM07iay6gbfKc&libraries=places"></script>
+
+    <!--leaflet js library style link -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+          integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+          crossorigin=""/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.css' %}"/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.css' %}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+{% endblock %}
+
+{% block css %}
+
+    .default-map-js-height{
+    height: 650px;
+    }
+
+    .main-file-sidebar .md-sidebar .md-sidebar-aside .common-sort-card .files-left-icons li a svg {
+    width: 24px;
+    height: 24px;
+    }
+
+    .border-tb-l-radius {
+    border-top-left-radius: 5px !important;
+    border-bottom-left-radius: 5px !important;
+    }
+
+    .main-file-sidebar .md-sidebar .md-sidebar-aside .common-sort-card .files-left-icons li {
+    margin-bottom: 10px;
+    }
+
+    .main-file-sidebar .md-sidebar .md-sidebar-aside .common-sort-card .files-left-icons li a {
+    padding: 6px 10px
+    }
+
+    .common-space {
+    justify-content: normal;
+    }
+
+{% endblock %}
+
+<!-- Header Page Hierarchy-->
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    {#        <h3>{{breadcrumb.title}} </h3>#}
+                    <h3>Design Network</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/index">
+                            <svg class="stroke-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                            </svg>
+                        </a></li>
+                        {#          <li class="breadcrumb-item">{{breadcrumb.parent}}</li>#}
+                        <li class="breadcrumb-item">Network</li>
+                        <li class="breadcrumb-item active">Design</li>
+                        {#          <li class="breadcrumb-item active">{{breadcrumb.child}}</li>#}
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+<!-- Header Page Hierarchy-->
+
+{% block content %}
+
+    <!-- Container-fluid starts-->
+    <div class="container-fluid main-scope-project">
+        <div class="row scope-bottom-wrapper">
+
+            <div class="col-xl-3 box-col-6 pe-0 xl-4 main-file-sidebar">
+                <div class="md-sidebar"><a class="btn btn-primary md-sidebar-toggle" href="#!">file filter</a>
+                    <div class="md-sidebar-aside job-left-aside custom-scrollbar">
+                        <div class="file-sidebar">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="common-sort-card">
+                                        <h5 class="mb-3">Layer Information</h5>
+                                        <ul class="files-left-icons file-type-icons">
+                                            <li class="border-left-primary border-tb-l-radius">
+                                                <a id="folder-files-tab" href="javaScript:void(0)">
+                                                    <div>
+                                                        <div class="form-check-size default-square radius-none">
+                                                            <div class="form-check form-switch form-check-inline">
+                                                                <input class="form-check-input switch-primary check-size"
+                                                                       type="checkbox" role="switch"
+                                                                       id="ck_vehicle_monitoring"
+                                                                       value="ck_vehicle_monitoring"
+                                                                       onchange="MappingModelJS.OnclickVehicleLiveMonitoring_Map(this.value)">
+                                                            </div>
+                                                        </div>
+                                                        <span>
+                                                            <img class="img-fluid for-light"
+                                                                 src="{% static 'assets/images/legend/toolbar/live-monitor.png' %}"
+                                                                 alt="" style="width: 24px; height: 24px;">
+                                                        </span>
+                                                        <span class="f-16 txt-primary p-t-5">Vehicle Monitoring</span>
+                                                    </div>
+                                                    <span>
+                                                        <button class="btn border-dashed-primary"
+                                                                style="padding: 0.05rem 0.565rem;">023</button>
+                                                    </span>
+                                                </a>
+                                            </li>
+                                            <li class="border-left-primary border-tb-l-radius">
+                                                <a id="folder-files-tab" href="javaScript:void(0)">
+                                                    <div>
+                                                        <div class="form-check-size default-square radius-none">
+                                                            <div class="form-check form-switch form-check-inline">
+                                                                <input class="form-check-input switch-primary check-size"
+                                                                       type="checkbox" role="switch">
+                                                            </div>
+                                                        </div>
+                                                        <span>
+                                                            <img class="img-fluid for-light"
+                                                                 src="{% static 'assets/images/legend/container/green.png' %}"
+                                                                 alt="" style="width: 24px; height: 24px;">
+                                                        </span>
+                                                        {#                                                        <svg>#}
+                                                        {#                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#folder-structure"></use>#}
+                                                        {#                                                        </svg>#}
+                                                        <span class="f-16 txt-primary p-t-5">All-Assets</span>
+                                                    </div>
+                                                    <span>
+                                                        <button class="btn border-dashed-primary"
+                                                                style="padding: 0.05rem 0.565rem;">333</button>
+                                                    </span>
+                                                </a>
+                                            </li>
+                                            <li class="border-left-primary border-tb-l-radius">
+                                                <a id="folder-files-tab" href="javaScript:void(0)">
+                                                    <div>
+                                                        <div class="form-check-size default-square radius-none">
+                                                            <div class="form-check form-switch form-check-inline">
+                                                                <input class="form-check-input switch-primary check-size"
+                                                                       type="checkbox" role="switch">
+                                                            </div>
+                                                        </div>
+                                                        <span>
+                                                            <img class="img-fluid for-light"
+                                                                 src="{% static 'assets/images/legend/container/green.png' %}"
+                                                                 alt="" style="width: 24px; height: 24px;">
+                                                        </span>
+                                                        {#                                                        <svg>#}
+                                                        {#                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#folder-structure"></use>#}
+                                                        {#                                                        </svg>#}
+                                                        <span class="f-16 txt-primary p-t-5">Container</span>
+                                                    </div>
+                                                    <span>
+                                                        <button class="btn border-dashed-primary"
+                                                                style="padding: 0.05rem 0.565rem;">333</button>
+                                                    </span>
+                                                </a>
+                                            </li>
+                                            <li class="border-left-primary border-tb-l-radius">
+                                                <a id="folder-files-tab" href="javaScript:void(0)">
+                                                    <div>
+                                                        <div class="form-check-size default-square radius-none">
+                                                            <div class="form-check form-switch form-check-inline">
+                                                                <input class="form-check-input switch-primary check-size"
+                                                                       type="checkbox"
+                                                                       id="asset_dumping_site_layer"
+                                                                       value="asset_dumping_site_layer"
+                                                                       onchange="DigitalArzModelJS.OnclickAssetLayer_TOC(this.value)"
+                                                                       role="switch">
+                                                            </div>
+                                                        </div>
+                                                        <span>
+                                                            <img class="img-fluid for-light"
+                                                                 src="{% static 'assets/images/legend/asset_logo/dumping_site.png' %}"
+                                                                 alt="" style="width: 24px; height: 24px;">
+                                                        </span>
+                                                        {#                                                        <svg>#}
+                                                        {#                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#folder-structure"></use>#}
+                                                        {#                                                        </svg>#}
+                                                        <span class="f-16 txt-primary p-t-5">Dumping Sites</span>
+                                                    </div>
+                                                    <span>
+                                                        <button class="btn border-dashed-primary"
+                                                                style="padding: 0.05rem 0.565rem;">333</button>
+                                                    </span>
+                                                </a>
+                                            </li>
+                                            <li class="border-left-primary border-tb-l-radius">
+                                                <a id="folder-files-tab" href="javaScript:void(0)">
+                                                    <div>
+                                                        <div class="form-check-size default-square radius-none">
+                                                            <div class="form-check form-switch form-check-inline">
+                                                                <input class="form-check-input switch-primary check-size"
+                                                                       type="checkbox"
+                                                                       id="asset_parking_site_layer"
+                                                                       value="asset_parking_site_layer"
+                                                                       onchange="DigitalArzModelJS.OnclickAssetLayer_TOC(this.value)"
+                                                                       role="switch">
+                                                            </div>
+                                                        </div>
+                                                        <span>
+                                                            <img class="img-fluid for-light"
+                                                                 src="{% static 'assets/images/legend/asset_logo/parking_site.png' %}"
+                                                                 alt="" style="width: 24px; height: 24px;">
+                                                        </span>
+                                                        {#                                                        <svg>#}
+                                                        {#                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#folder-structure"></use>#}
+                                                        {#                                                        </svg>#}
+                                                        <span class="f-16 txt-primary p-t-5">Parking Sites</span>
+                                                    </div>
+                                                    <span>
+                                                        <button class="btn border-dashed-primary"
+                                                                style="padding: 0.05rem 0.565rem;">333</button>
+                                                    </span>
+                                                </a>
+                                            </li>
+                                            <li class="border-left-primary border-tb-l-radius">
+                                                <a id="folder-files-tab" href="javaScript:void(0)">
+                                                    <div>
+                                                        <div class="form-check-size default-square radius-none">
+                                                            <div class="form-check form-switch form-check-inline">
+                                                                <input class="form-check-input switch-primary check-size"
+                                                                       type="checkbox"
+                                                                       id="asset_workshop_layer"
+                                                                       value="asset_workshop_layer"
+                                                                       onchange="DigitalArzModelJS.OnclickAssetLayer_TOC(this.value)"
+                                                                       role="switch">
+                                                            </div>
+                                                        </div>
+                                                        <span>
+                                                            <img class="img-fluid for-light"
+                                                                 src="{% static 'assets/images/legend/asset_logo/workshop.png' %}"
+                                                                 alt="" style="width: 24px; height: 24px;">
+                                                        </span>
+                                                        {#                                                        <svg>#}
+                                                        {#                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#folder-structure"></use>#}
+                                                        {#                                                        </svg>#}
+                                                        <span class="f-16 txt-primary p-t-5">Workshop</span>
+                                                    </div>
+                                                    <span>
+                                                        <button class="btn border-dashed-primary"
+                                                                style="padding: 0.05rem 0.565rem;">333</button>
+                                                    </span>
+                                                </a>
+                                            </li>
+                                            <li class="border-left-primary border-tb-l-radius">
+                                                <a id="folder-files-tab" href="javaScript:void(0)">
+                                                    <div>
+                                                        <div class="form-check-size default-square radius-none">
+                                                            <div class="form-check form-switch form-check-inline">
+                                                                <input class="form-check-input switch-primary check-size"
+                                                                       type="checkbox"
+                                                                       id="asset_filling_station_layer"
+                                                                       value="asset_filling_station_layer"
+                                                                       onchange="DigitalArzModelJS.OnclickAssetLayer_TOC(this.value)"
+                                                                       role="switch">
+                                                            </div>
+                                                        </div>
+                                                        <span>
+                                                            <img class="img-fluid for-light"
+                                                                 src="{% static 'assets/images/legend/asset_logo/filling_station.png' %}"
+                                                                 alt="" style="width: 24px; height: 24px;">
+                                                        </span>
+                                                        {#                                                        <svg>#}
+                                                        {#                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#folder-structure"></use>#}
+                                                        {#                                                        </svg>#}
+                                                        <span class="f-16 txt-primary p-t-5">Filling Station</span>
+                                                    </div>
+                                                    <span>
+                                                        <button class="btn border-dashed-primary"
+                                                                style="padding: 0.05rem 0.565rem;">333</button>
+                                                    </span>
+                                                </a>
+                                            </li>
+                                            <li class="border-left-primary border-tb-l-radius">
+                                                <a id="folder-files-tab" href="javaScript:void(0)">
+                                                    <div>
+                                                        <div class="form-check-size default-square radius-none">
+                                                            <div class="form-check form-switch form-check-inline">
+                                                                <input class="form-check-input switch-primary check-size"
+                                                                       type="checkbox"
+                                                                       id="asset_union_council_layer"
+                                                                       value="asset_union_council_layer"
+                                                                       onchange="DigitalArzModelJS.OnclickAssetLayer_TOC(this.value)"
+                                                                       role="switch">
+                                                            </div>
+                                                        </div>
+                                                        <span>
+                                                            <img class="img-fluid for-light"
+                                                                 src="{% static 'assets/images/legend/asset_logo/union_council.png' %}"
+                                                                 alt="" style="width: 24px; height: 24px;">
+                                                        </span>
+                                                        {#                                                        <svg>#}
+                                                        {#                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#folder-structure"></use>#}
+                                                        {#                                                        </svg>#}
+                                                        <span class="f-16 txt-primary p-t-5">Union Council</span>
+                                                    </div>
+                                                    <span>
+                                                        <button class="btn border-dashed-primary"
+                                                                style="padding: 0.05rem 0.565rem;">333</button>
+                                                    </span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-9 col-md-12 box-col-12 xl-66">
+                <div class="row">
+
+                    <div class="col-12">
+                        <div class="common-project-header common-space m-b-20">
+                            <div class="common-align">
+                                <ul>
+                                    <li class="d-inline-block">
+                                        <select class="form-select" id="cmd_zone" name="cmd_zone">
+                                            <option value="NA">Vehicle Type</option>
+                                        </select>
+                                    </li>
+                                    <li class="d-inline-block">
+                                        <select class="form-select" id="cmd_zone" name="cmd_zone">
+                                            <option value="NA">Reg. No</option>
+                                        </select>
+                                    </li>
+                                    <li class="d-inline-block">
+                                        <select class="form-select" id="cmd_zone" name="cmd_zone">
+                                            <option value="NA">Route</option>
+                                        </select>
+                                    </li>
+                                    <li class="d-inline-block">
+                                        <select id="cmd_town" name="cmd_town" class="form-select">
+                                            <option Value="NA">Town Name</option>
+                                            {% for town in town_boundary %}
+                                                <option value="{{ town.town_code }}">
+                                                    {{ town.town_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </li>
+                                    <li class="d-inline-block">
+                                        <select class="form-select" id="cmd_zone" name="cmd_zone">
+                                            <option value="NA">Zone Name</option>
+                                        </select>
+                                    </li>
+                                    <li class="d-inline-block">
+                                        <select class="form-select" id="cmd_mc" name="cmd_mc">
+                                            <option value="NA">Union Council</option>
+                                        </select>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="common-align">
+                                <a class="btn btn-primary" href="projectcreate.html" target="_blank"><i
+                                        class="fa-solid fa-plus"></i> Generate </a>
+                                <a class="btn btn-primary" href="projectcreate.html" target="_blank"><i
+                                        class="fa-solid fa-plus"></i> Summary </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body z-1 p-0">
+                                <div class="default-map-js-height b-r-10" id="default-map"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Container-fluid Ends-->
+
+{% endblock %}
+
+{% block LeafletJS %}
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+            integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+            crossorigin=""></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/GoogleMutant/Leaflet.GoogleMutant.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/measure/L.MeasuringTool.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.js' %}"></script>
+    <!-- Dependency to Leaflet Draw -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://npmcdn.com/leaflet.path.drag/src/Path.Drag.js"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Editable/Leaflet.Editable.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.geometryutil.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.snap.js" %}"></script>
+
+    <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+
+{% endblock %}
+
+<!-- Custom JS -->
+{% block CustomerJS %}
+    <script src="{% static "assets/script/include/DigitalArz.js" %}" type="text/javascript"></script>
+    <script src="{% static "assets/script/include/TOCLayerModel.js" %}" type="text/javascript"></script>
+    <script src="{% static "assets/app_js/MappingModel.js" %}" type="text/javascript"></script>
+    <script>
+
+        let DigitalArzModelJS = null;
+        let TOCLayerModelJS = null;
+        let MappingModelJS = null;
+
+        let fetch_route_network_schedule_feature = '{% url "FetchRouteNetworkScheduleFeature" %}';
+        let fetch_vehicle_feature_data = '{% url "FetchVehicleFeatureData" %}';
+
+        let fetch_dumping_site_feature_data = '{% url "FetchDumpingSiteData" %}';
+        let fetch_dumping_coverage_feature_data = '{% url "FetchDumpingCoverageData" %}';
+        let fetch_parking_site_feature_data = '{% url "FetchParkingSiteData" %}';
+        let fetch_workshop_feature_data = '{% url "FetchWorkshopData" %}';
+        let fetch_filling_station_feature_data = '{% url "FetchFillingStationData" %}';
+
+        let fetch_union_council_feature_data = '{% url "FetchUnionCouncilFeature" %}';
+
+        let fetch_container_feature_process_type_data = '{% url "FetchContainerFeatureData_ProcessType" %}';
+        let fetch_vehicle_trip_history_data = '{% url "FetchVehicleTripHistoryData" %}';
+
+        $(document).ready(function () {
+
+            //// MAPPING MODEL JS
+            DigitalArzModelJS = new AppDigitalArzModel("default-map");
+            if (DigitalArzModelJS.map === null) {
+                DigitalArzModelJS.minZoom = 11;
+                DigitalArzModelJS.LoadMap("true", "");
+                {#let district_extent = '67.092568,24.917366,74.593624,34.0247';#}
+                ////  THIS FUNCTION IS USED TO ZOOM THE LAYER  /////
+                {#DigitalArzModelJS.ZoomToFeature("", district_extent);#}
+
+                $.getJSON("/static/assets/util-json/group_color_json.json", function (data) {
+                    TOCLayerModelJS.GroupColorJson = data;
+                });
+
+                //// MAPPING MODEL DEFINE
+                MappingModelJS = new AppMappingModel();
+
+                //// TOC LAYER MODEL LAYER DEFINE
+                TOCLayerModelJS = new AppTOCLayerModel();
+                TOCLayerModelJS.appConstructor();
+
+                {#//// FETCH CONTAINER FEATURE BASED ON PROCESS TYPE#}
+                TOCLayerModelJS.FetchDumpingCoverageData();
+                {##}
+                {#//// FETCH ROAD NETWORK SCHEDULE FEATURE#}
+                {#TOCLayerModelJS.FetchRouteNetworkScheduleFeature();#}
+                {##}
+                {#//// FETCH VEHICLE FEATURE DATA#}
+                {#TOCLayerModelJS.FetchVehicleFeatureData();#}
+                {##}
+
+            }
+
+        });
+    </script>
+{% endblock %}
+<!-- End Custom JS -->

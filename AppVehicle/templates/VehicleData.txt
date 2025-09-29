@@ -1,0 +1,600 @@
+{% extends "master.html" %}
+{% load static %}
+{% load urlify %}
+{% load humanize %}
+
+{% block title %}Vehicle Data{% endblock %}
+
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/jquery.dataTables.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/dataTables.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/sweetalert2.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select/bootstrap-select.min.css" %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{% endblock %}
+
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3>Vehicle Data</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/">
+                            <svg class="stroke-icon"></svg>
+                        </a></li>
+                        <li class="breadcrumb-item active">Vehicle Data</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+
+    <!-- Container-fluid starts-->
+    <div class="container-fluid main-companies">
+
+        <div class="row">
+
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+
+                        <style>
+                            .form-control {
+                                padding: 0.25rem 0.65rem;
+                            }
+                        </style>
+
+                        <form class="form form-horizontal" action=""
+                              method="post" accept-charset='utf-8'
+                              enctype="multipart/form-data">
+
+                            {% csrf_token %}
+                            <div class="row g-3 custom-input">
+
+                                <div class="col-xl col-md-6">
+                                    <label class="form-label">Ownership</label>
+                                    <select id="cmd_vehicle_ownership" name="cmd_vehicle_ownership"
+                                            class="selectpicker" data-live-search="true">
+                                        <option value="NA" selected>Choose One</option>
+                                        {% for ownership in vehicle_ownership_list %}
+                                            <option value="{{ ownership.ownership_status }}"
+                                                    {% if get_vehicle_type == ownership.ownership_status %}selected{% endif %}>
+                                                {{ ownership.ownership_status }}
+                                                - {{ ownership.count }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-xl col-md-6">
+                                    <label class="form-label">Vehicle With Type</label>
+                                    <select id="cmd_vehicle_type" name="cmd_vehicle_type"
+                                            class="selectpicker" data-live-search="true">
+                                        <option value="NA" selected>Choose One</option>
+                                        {% for type in vehicle_type_list %}
+                                            <option value="{{ type.vehicle_type }}"
+                                                    {% if get_vehicle_type == type.vehicle_type %}selected{% endif %}>
+                                                {{ type.vehicle_type }}
+                                                - {{ type.count }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-xl col-md-6">
+                                    <label class="form-label" for="vehicle_code">Vehicle Code</label>
+                                    <select id="cmd_vehicle_list"
+                                            name="cmd_vehicle_list" class="selectpicker"
+                                            data-live-search="true" data-size="10">
+                                        <option value="NA" selected>Choose One</option>
+                                        {% for vehicle in cmd_vehicle_data %}
+                                            <option value="{{ vehicle.vehicle_code }}"
+                                                    {% if selected_vehicle_code == vehicle.vehicle_code %}selected{% endif %}>
+                                                {% if vehicle.register_no == "APL-4" %}
+                                                    {{ vehicle.chasis_no }}
+                                                {% elif vehicle.register_no != "APL-4" %}
+                                                    {{ vehicle.register_no }}
+                                                {% endif %}
+                                                 - {{ vehicle.pitb_code }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col d-flex justify-content-start align-items-center m-t-40">
+                                    <button type="submit" class="btn btn-success f-w-500 mx-3">Apply Filter
+                                    </button>
+
+                                    <button type="reset" class="btn btn-outline-danger f-w-500">Reset</button>
+                                </div>
+
+                                <div class="col d-flex justify-content-start align-items-center m-t-40">
+                                    <a href="{% url 'VehicleTypeManager' %}" class="btn btn-primary" target="_blank">
+                                        <i class="fa fa-cogs"></i> Vehicle Type Manager
+                                    </a>
+                                </div>
+
+                            </div>
+
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+
+                        <form class="form form-horizontal" method="post" accept-charset="utf-8">
+
+                            {% csrf_token %}
+                            <div class="row g-3 custom-input">
+
+
+                                <!-- owner_code -->
+                                <div class="col-xl col-md-6">
+                                    <label class="form-label">Owner</label>
+                                    <select name="owner_code" class="selectpicker" data-live-search="true">
+                                        <option value="">Choose One</option>
+                                        {% for owner in owner_code_list %}
+                                            <option value="{{ owner }}">{{ owner }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-xl col-md-6 pull-right">
+                                    <label class="form-label">Search All</label>
+                                    <input type="text" name="search" class="form-control" placeholder="Search All">
+                                </div>
+
+
+                            </div>
+                        </form>
+                        <!-- ...existing code... -->
+
+                        <!-- ...existing code for table... -->
+                        <!-- ...existing code for table... -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Owner Edit Modal -->
+
+        <div class="modal fade" id="ownerEditModal" tabindex="-1" aria-labelledby="ownerEditModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="ownerEditModalLabel">Update Vehicle Data</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="ownerEditForm">
+          {% csrf_token %}
+          <input type="hidden" id="edit_vehicle_id" name="vehicle_id">
+          <input type="hidden" name="update_owner" value="true">
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Vehicle Code</label>
+              <input type="text" class="form-control" id="edit_vehicle_code" name="vehicle_code" readonly>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">PITB Code</label>
+              <input type="text" class="form-control" id="edit_pitb_code" name="pitb_code">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Vendor Code</label>
+              <input type="text" class="form-control" id="edit_vendor_code" name="vendor_code" readonly>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Register No</label>
+              <input type="text" class="form-control" id="edit_register_no" name="register_no" readonly>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Chasis No</label>
+              <input type="text" class="form-control" id="edit_chasis_no" name="chasis_no">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Vehicle Type</label>
+              <input type="text" class="form-control" id="edit_vehicle_type" name="vehicle_type" readonly>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Vehicle Used For</label>
+              <input type="text" class="form-control" id="edit_vehicle_used_for" name="vehicle_used_for" placeholder="Enter usage (e.g. Waste Collection)">
+            </div>
+           <div class="col-md-6">
+              <label class="form-label">Status</label>
+              <input type="text" class="form-control" id="edit_status" name="status" readonly>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Owner</label>
+              <select id="edit_owner_code" name="owner_code" class="form-select selectpicker" data-live-search="true">
+                <option value="">-- Select Owner --</option>
+                {% for owner_code in owner_code_list %}
+                  <option value="{{ owner_code }}">{{ owner_code }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Ownership Status</label>
+              <select id="edit_ownership_status" name="ownership_status" class="form-select">
+                <option value="Owner">Owner</option>
+                <option value="Rented">Rented</option>
+              </select>
+            </div>
+            <!-- ...existing code... -->
+          <div class="col-md-6">
+            <label class="form-label">VTMS Status</label>
+            <select id="edit_vtms_status" name="vtms_status" class="form-select">
+              <option value="Working" {% if v.vtms_status == 'Working' %}selected{% endif %}>Working</option>
+              <option value="Stop"    {% if v.vtms_status == 'Stop'     %}selected{% endif %}>Stop</option>
+            </select>
+          </div>
+<!-- ...existing code... -->
+          </div>
+          <div class="text-end mt-3">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- ...existing code... -->
+        <!-- Vehicle Data Table -->
+        <div class="row candidate-wrapper">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body candidates-box px-0">
+                        <div class="table-responsive custom-scrollbar">
+
+                            <table class="table" id="vehicle-data-table">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th class="pitb-code-column">PITB Code</th>
+                                    <th>Register No</th>
+                                    <th>Type</th>
+                                    <th>Make</th>
+                                    <th>Model</th>
+                                    <th>Color</th>
+                                    <th>Status</th>
+                                    <th>Owner</th>
+                                    <th>Ownership Status</th>
+                                    <th>VTMS Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for v in vehicle_data %}
+                                    <tr>
+                                        <th scope="row">{{ forloop.counter }}</th>
+                                        <td class="pitb-code-column">{{ v.pitb_code }}</td>
+                                        <td>{{ v.register_no }}</td>
+                                        <td>
+                                            {% if v.vehicle_type == "Car" %}
+                                                <i class="fa fa-car me-1"></i>
+                                            {% elif v.vehicle_type == "Truck" %}
+                                                <i class="fa fa-truck me-1"></i>
+                                            {% elif v.vehicle_type == "Tractor Trolly" %}
+                                                <i class="fa fa-tractor me-1"></i>
+                                            {% elif v.vehicle_type == "Tractor Loader" %}
+                                                <i class="fa fa-tractor me-1"></i>
+                                            {% elif v.vehicle_type == "Loader Rickshaw" %}
+                                                <i class="fa fa-truck-pickup me-1"></i>
+                                            {% elif v.vehicle_type == "Chain Arm Roller" %}
+                                                <i class="fa fa-cogs me-1"></i>
+                                            {% elif v.vehicle_type == "Compactor 7m3" %}
+                                                <i class="fa fa-compress me-1"></i>
+                                            {% elif v.vehicle_type == "Dumper 10m3" %}
+                                                <i class="fa fa-dumpster me-1"></i>
+                                            {% else %}
+                                                <i class="fa fa-question-circle me-1"></i>
+                                            {% endif %}
+                                            {{ v.vehicle_type }}
+                                        </td>
+                                        <td>{{ v.make }}</td>
+                                        <td>{{ v.model }}</td>
+                                        <td>{{ v.color }}</td>
+                                        <td>
+                                            {% if v.status == "Active" %}
+                                                <span class="badge badge-light-success">Active</span>
+                                            {% else %}
+                                                <span class="badge badge-light-danger">Blocked</span>
+                                            {% endif %}
+                                        </td>
+                                        <!-- Replace these incorrect references (around lines 170-171) -->
+                                        <td>{{ v.owner.name|default:"Not Assigned" }}</td>
+                                        <td>{{ v.ownership_status|default:"Not Assigned" }}</td>
+                                        <td>{{ v.vtms_status|default:"Not Assigned" }}</td>
+                                        <td>
+                                            <!-- ...inside your table row... -->
+                                            <button class="btn btn-sm btn-primary edit-owner-btn"
+                                            data-id="{{ v.id }}"
+                                            data-vehicle_code="{{ v.vehicle_code }}"
+                                            data-vendor_code="{{ v.vendor_code }}"
+                                            data-register_no="{{ v.register_no }}"
+                                            data-make="{{ v.make }}"
+                                            data-engine_no="{{ v.engine_no }}"
+                                            data-chasis_no="{{ v.chasis_no }}"
+                                            data-color="{{ v.color }}"
+                                            data-model="{{ v.model }}"
+                                            data-cc="{{ v.cc }}"
+                                            data-fuel_type="{{ v.fuel_type }}"
+                                            data-total_mileage="{{ v.total_mileage|default:0 }}"
+                                            data-vehicle_type="{{ v.vehicle_type }}"
+                                            data-vehicle_used_for="{{ v.vehicle_used_for|default:'' }}"
+                                            data-status="{{ v.status }}"
+                                            data-pitb_code="{{ v.pitb_code }}"
+                                            data-owner="{{ v.owner.owner_code|default:'' }}"
+                                            data-ownership_status="{{ v.ownership_status }}"
+                                            data-vtms_status="{{ v.vtms_status }}">
+                                            <i class="fa fa-edit"></i> Edit
+                                        </button>
+
+                                            <button class="btn btn-sm btn-success show-info-btn"
+                                                    data-register_no="{{ v.register_no }}">Show Info
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+
+                        <style>
+                            .square-white {
+                                width: 34px;
+                                height: 34px;
+                                border-radius: 2px;
+                                background-color: #fff;
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                box-shadow: 0px 0px 28px 6px rgba(235, 235, 235, 0.4);
+                            }
+
+                            .square-white svg {
+                                width: calc(18px + 4 * (100vw - 320px) / 1600);
+                                height: calc(18px + 4 * (100vw - 320px) / 1600);
+                                cursor: pointer;
+                                fill: var(--chart-text-color);
+                            }
+
+                            table.dataTable tbody th, table.dataTable tbody td {
+                                padding: 5px 5px;
+                            }
+
+                        </style>
+
+                        <div class="table-responsive support-ticket-table custom-scrollbar">
+                            <table class="display border table-striped" id="basic-6">
+                                <thead>
+                                <tr>
+                                    <th rowspan="2">Type</th>
+                                    <th colspan="6">Vehicle Information</th>
+                                    <th colspan="3">Status</th>
+                                    <th rowspan="2">Action</th>
+                                </tr>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Chasis#</th>
+                                    <th>Register#</th>
+                                    <th>Make</th>
+                                    <th>Model</th>
+                                    <th>Color</th>
+                                    <th>Ownership</th>
+                                    <th>VTMS</th>
+                                    <th>Status</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+
+                                {% for v in vehicle_data %}
+
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex">
+                                                <img class="rounded-circle img-30 me-3"
+                                                     src="{% static 'assets/images/user/3.png' %}"
+                                                     alt="Generic placeholder image">
+                                                <div class="flex-grow-1 align-self-center">
+                                                    <div>{{ v.vehicle_type }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ v.pitb_code }} - {{ v.vehicle_code }} </td>
+                                        <td>{{ v.chasis_no }}</td>
+                                        <td>{{ v.register_no }}</td>
+                                        <td>{{ v.make }}</td>
+                                        <td>{{ v.model }}</td>
+                                        <td>{{ v.color }}</td>
+                                        <td>{{ v.ownership_status }}</td>
+                                        <td>
+                                            {% if v.vtms_status == "Working" %}
+                                                <span class="badge badge-light-primary">Working</span>
+                                            {% else %}
+                                                <span class="badge badge-light-danger">Stop</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if v.status == "Active" %}
+                                                <span class="badge badge-light-success">Active</span>
+                                            {% else %}
+                                                <span class="badge badge-light-danger">Blocked</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="common-align gap-3 justify-content-start">
+                                                <a class="square-white" href="order-details.html"
+                                                   data-bs-toggle="tooltip" data-bs-placement="top"
+                                                   data-bs-title="View">
+                                                    <svg>
+                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-view"></use>
+                                                    </svg>
+                                                </a>
+                                                <a class="square-white" href="#!"
+                                                   data-bs-toggle="tooltip" data-bs-placement="top"
+                                                   data-bs-title="Edit">
+                                                    <svg>
+                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#edit-content"></use>
+                                                    </svg>
+                                                </a>
+                                                <a class="square-white" href="#!" data-bs-toggle="tooltip"
+                                                   data-bs-placement="top" data-bs-title="Delete">
+                                                    <svg>
+                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#trash1"></use>
+                                                    </svg>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                {% endfor %}
+
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+    <!-- Container-fluid starts-->
+
+{% endblock %}
+
+{% block PluginsJS %}
+    <script src="{% static "assets/js/datatable/datatables/jquery.dataTables.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables1.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.bootstrap5.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/select.bootstrap5.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/datatable.custom.js" %}"></script>
+    <script src="{% static "assets/js/sweet-alert/sweetalert.min.js" %}"></script>
+    <script src="{% static "assets/js/flat-pickr/flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/flat-pickr/custom-flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/select/bootstrap-select.min.js" %}"></script>
+    <script src="{% static "assets/js/tooltip-init.js" %}"></script>
+    <script src="{% static "assets/js/support-ticket-custom.js" %}"></script>
+
+{% endblock %}
+
+{% block CustomerJS %}
+    <script>
+        $(document).ready(function () {
+            $('#vehicle-data-table').DataTable({
+                "pageLength": 25,
+                "order": [[0, "asc"]],
+                "responsive": true,
+
+            });
+
+            // Handle edit owner button click
+            // ...existing code...
+// ...inside $(document).ready(function() { ... });
+            $('.edit-owner-btn').on('click', function () {
+                $('#edit_vehicle_id').val($(this).data('id'));
+                $('#edit_vehicle_code').val($(this).data('vehicle_code'));
+                $('#edit_vendor_code').val($(this).data('vendor_code'));
+                $('#edit_register_no').val($(this).data('register_no'));
+                $('#edit_make').val($(this).data('make'));
+                $('#edit_engine_no').val($(this).data('engine_no'));
+                $('#edit_chasis_no').val($(this).data('chasis_no'));
+                $('#edit_color').val($(this).data('color'));
+                $('#edit_model').val($(this).data('model'));
+                $('#edit_cc').val($(this).data('cc'));
+                $('#edit_fuel_type').val($(this).data('fuel_type'));
+                $('#edit_vehicle_used_for').val($(this).data('vehicle_used_for'));
+                let mileage = $(this).attr('data-total_mileage');
+                if (mileage === "" || mileage === null || typeof mileage === "undefined" || isNaN(mileage)) {
+                    mileage = 0;
+                }
+                $('#edit_total_mileage').val(mileage);
+                $('#edit_vehicle_type').val($(this).data('vehicle_type'));
+                $('#edit_status').val($(this).data('status'));
+                $('#edit_pitb_code').val($(this).data('pitb_code'));
+                $('#edit_owner_code').val($(this).data('owner')).change();
+                $('#edit_ownership_status').val($(this).data('ownership_status'));
+                $('.selectpicker').selectpicker('refresh'); // Refresh selectpicker for live search
+                $('#ownerEditModal').modal('show');
+            });
+            // Handle form submission
+            $('#ownerEditForm').on('submit', function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: window.location.href,
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success) {
+                            // Show success message
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success',
+                                text: response.message,
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                // Reload page to show updated data
+                                window.location.reload();
+                            });
+                        } else {
+                            // Show error message
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message,
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    },
+                    error: function () {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'An unexpected error occurred. Please try again.',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
+
+                // Hide the modal
+                $('#ownerEditModal').modal('hide');
+            });
+
+            $('.show-info-btn').on('click', function () {
+                var registerNo = $(this).data('register_no');
+                var url = "{% url 'single_vehicle_info' 'VEHICLE_ID_PLACEHOLDER' %}".replace('VEHICLE_ID_PLACEHOLDER', registerNo);
+                window.location.href = url;
+            });
+        });
+    </script>
+{% endblock %}

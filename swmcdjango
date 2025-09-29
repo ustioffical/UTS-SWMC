@@ -1,0 +1,13 @@
+server {
+    listen 100;
+    server_name 167.172.68.19;
+
+    location /static/ {
+        root /home/Django/prj_sgi_sahiwal_suthra/SGI_Sahiwal_Suthra/;
+    }
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/run/gunicorn.sock;
+    }
+}

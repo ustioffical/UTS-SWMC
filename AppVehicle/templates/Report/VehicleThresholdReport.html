@@ -1,0 +1,848 @@
+{% extends "master.html" %}
+{% load static %}
+{% load urlify %}
+{% load humanize %}
+
+{% block title %}Vehicle Threshold Report{% endblock %}
+
+<!-- Custom Plugins CSS -->
+{% block PluginsCSS %}
+
+    <!-- Plugins css start-->
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/flatpickr/flatpickr.min.css" %}">
+    <!-- Plugins css Ends-->
+
+    <!-- Bootstrap css-->
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/bootstrap.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select/bootstrap-select.min.css" %}">
+
+    <!-- Responsive css-->
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/responsive.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/jquery.dataTables.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/sweetalert2.css" %}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+<!--End Custom Plugins CSS -->
+
+<!-- Header Page Hierarchy-->
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3>Vehicle</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/">
+                            <svg class="stroke-icon">
+                            </svg>
+                        </a></li>
+                        <li class="breadcrumb-item active">Threshold Report</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+<!-- Header Page Hierarchy-->
+
+{% block content %}
+
+    <!-- Container-fluid starts-->
+    <div class="container-fluid main-companies">
+
+        <div class="row">
+
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+
+                        <style>
+                            .form-control {
+                                padding: 0.25rem 0.65rem;
+                            }
+                        </style>
+
+                        <form class="form form-horizontal" action=""
+                              method="post" accept-charset='utf-8'
+                              enctype="multipart/form-data">
+
+                            {% csrf_token %}
+                            <div class="row g-3 custom-input">
+                                <div class="col-xl col-md-6">
+                                    <label class="form-label">Vehicle With Type</label>
+                                    <select id="cmd_vehicle_type"
+                                            name="cmd_vehicle_type"
+                                            class="selectpicker"
+                                            data-live-search="true">
+                                        <option value="NA" selected>Choose One</option>
+                                        {% for type in vehicle_type_list %}
+                                            <option value="{{ type.vehicle_type }}"
+                                                    {% if get_vehicle_type == type.vehicle_type %}selected{% endif %}>
+                                                {{ type.vehicle_type }}
+                                                - {{ type.count }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-xl col-md-6">
+                                    <label class="form-label" for="date">Date</label>
+                                    <div class="input-group flatpicker-calender">
+                                        <input class="form-control" id="selected_date" name="selected_date"
+                                               type="date" value="{{ str_selected_date }}">
+                                    </div>
+                                </div>
+
+                                <div class="col-xl col-md-6">
+                                    <label class="form-label" for="vehicle_code">Vehicle Code</label>
+                                    <select id="cmd_vehicle_list"
+                                            name="cmd_vehicle_list" class="selectpicker"
+                                            data-live-search="true" data-size="10">
+                                        <option value="NA"
+                                                {% if not selected_vehicle_code %}selected{% endif %}>
+                                            Choose One
+                                        </option>
+                                        {% for vehicle in cmd_vehicle_data %}
+                                            <option value="{{ vehicle.vehicle_code }}"
+                                                    {% if selected_vehicle_code == vehicle.vehicle_code %}selected{% endif %}>
+                                                {% if vehicle.register_no == "APL-4" %}
+                                                    {{ vehicle.chasis_no }}
+                                                {% else %}
+                                                    {{ vehicle.register_no }}
+                                                {% endif %}
+                                                ({{ vehicle.pitb_code }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col d-flex justify-content-start align-items-center m-t-40">
+                                    <button type="submit" class="btn btn-primary f-w-500">Submit</button>
+                                </div>
+                                <div class="col d-flex justify-content-start align-items-center m-t-40">
+                                    <button id="exportExcelButton" class="btn btn-primary">Generate Excel</button>
+                                </div>
+                                <!-- new code today -->
+                                <div class="col d-flex justify-content-start align-items-center m-t-40">
+                                    <button id="pushToPitbButton" class="btn btn-warning" type="button">Push To PITB
+                                    </button>
+                                </div>
+                                <!-- end new code today -->
+
+                            </div>
+
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="row general-widget-wrapper">
+
+            <style>
+                .course-box .card-body {
+                    padding: 10px 15px;
+                }
+            </style>
+
+            <div class="col-sm-12 col-xl-3 col-lg-3 box-col-3">
+                <div class="card course-box">
+                    <div class="card-body">
+                        <div class="course-widget">
+                            <div class="course-icon all">
+                                <svg class="fill-icon">
+                                    <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="mb-0">
+                                    <span class="counter">{{ vehicle_data_list|length }}</span>
+                                </h4>
+                                <span class="f-light">Total Vehicle</span>
+                            </div>
+                        </div>
+                    </div>
+                    <ul class="square-group">
+                        <li class="square-1 warning"></li>
+                        <li class="square-1 primary"></li>
+                        <li class="square-2 warning1"></li>
+                        <li class="square-3 danger"></li>
+                        <li class="square-4 light"></li>
+                        <li class="square-5 warning"></li>
+                        <li class="square-6 success"></li>
+                        <li class="square-7 success"></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-sm-12 col-xl-3 col-lg-3 box-col-3">
+                <div class="card course-box">
+                    <div class="card-body">
+                        <div class="course-widget">
+                            <div class="course-icon success">
+                                <svg class="fill-icon">
+                                    <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="mb-0">
+                                    <span class="counter">{{ total_distance|floatformat:2|intcomma }}</span>
+                                </h4>
+                                <span class="f-light">Total Distance</span>
+                            </div>
+                        </div>
+                    </div>
+                    <ul class="square-group">
+                        <li class="square-1 warning"></li>
+                        <li class="square-1 primary"></li>
+                        <li class="square-2 warning1"></li>
+                        <li class="square-3 danger"></li>
+                        <li class="square-4 light"></li>
+                        <li class="square-5 warning"></li>
+                        <li class="square-6 success"></li>
+                        <li class="square-7 success"></li>
+                    </ul>
+                </div>
+            </div>
+            {#            <div class="col-sm-12 col-xl-3 col-lg-3 box-col-3">#}
+            {#                <div class="card course-box">#}
+            {#                    <div class="card-body">#}
+            {#                        <div class="course-widget">#}
+            {#                            <div class="course-icon warning">#}
+            {#                                <svg class="fill-icon">#}
+            {#                                    <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>#}
+            {#                                </svg>#}
+            {#                            </div>#}
+            {#                            <div>#}
+            {#                                <h4 class="mb-0">#}
+            {#                                    <span class="counter" id="summary_moving_vehicle">0</span>#}
+            {#                                </h4>#}
+            {#                                <span class="f-light">Ignition</span>#}
+            {#                            </div>#}
+            {#                        </div>#}
+            {#                    </div>#}
+            {#                    <ul class="square-group">#}
+            {#                        <li class="square-1 warning"></li>#}
+            {#                        <li class="square-1 primary"></li>#}
+            {#                        <li class="square-2 warning1"></li>#}
+            {#                        <li class="square-3 danger"></li>#}
+            {#                        <li class="square-4 light"></li>#}
+            {#                        <li class="square-5 warning"></li>#}
+            {#                        <li class="square-6 success"></li>#}
+            {#                        <li class="square-7 success"></li>#}
+            {#                    </ul>#}
+            {#                </div>#}
+            {#            </div>#}
+            <div class="col-sm-12 col-xl-3 col-lg-3 box-col-3">
+                <div class="card course-box">
+                    <div class="card-body">
+                        <div class="course-widget">
+                            <div class="course-icon warning">
+                                <svg class="fill-icon">
+                                    <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="mb-0">
+                                    <span class="counter">{{ total_working_hour|floatformat:2|intcomma }}</span>
+                                </h4>
+                                <span class="f-light">Working HR</span>
+                            </div>
+                        </div>
+                    </div>
+                    <ul class="square-group">
+                        <li class="square-1 warning"></li>
+                        <li class="square-1 primary"></li>
+                        <li class="square-2 warning1"></li>
+                        <li class="square-3 danger"></li>
+                        <li class="square-4 light"></li>
+                        <li class="square-5 warning"></li>
+                        <li class="square-6 success"></li>
+                        <li class="square-7 success"></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-sm-12 col-xl-3 col-lg-3 box-col-3">
+                <div class="card">
+                    <div class="card-body" style="padding: 15px;">
+                        <ul class="lessons-lists">
+                            <li><img src="{% static 'assets/images/dashboard-3/lessons/3.png' %}" alt="bootstrap icon">
+                                <div>
+                                    <h6 class="f-14 f-w-400 mb-0">Auto-Refresh</h6><span class="f-light">1-Minute</span>
+                                </div>
+                                <div class="lesson-wrap ms-auto">
+                                    <div id="lessonChart3"></div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {#Count down refresh code#}
+            <div class="col-sm-12 col-xl-3 col-lg-3 box-col-3">
+                <div class="card course-box">
+                    <!-- Add this after the existing filter buttons -->
+
+                    <div class="col d-flex justify-content-start align-items-center m-t-40 ms-3">
+                        <div class="card" style="min-width: 200px;">
+                            <div class="card-body text-center p-2">
+                                <h6 class="mb-2">Auto Refresh</h6>
+                                <div class="mb-2">
+                                    <span id="countdownTimer" class="badge badge-primary" style="font-size: 1.2em;">01:00</span>
+                                </div>
+                                <div class="btn-group" role="group">
+                                    <button id="pauseBtn" class="btn btn-warning btn-sm">
+                                        <i class="fa fa-pause"></i> Pause
+                                    </button>
+                                    <button id="playBtn" class="btn btn-success btn-sm" style="display: none;">
+                                        <i class="fa fa-play"></i> Play
+                                    </button>
+                                    <button id="resetBtn" class="btn btn-info btn-sm">
+                                        <i class="fa fa-refresh"></i> Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <ul class="square-group">
+                        <li class="square-1 warning"></li>
+                        <li class="square-1 primary"></li>
+                        <li class="square-2 warning1"></li>
+                        <li class="square-3 danger"></li>
+                        <li class="square-4 light"></li>
+                        <li class="square-5 warning"></li>
+                        <li class="square-6 success"></li>
+                        <li class="square-7 success"></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row">
+        <div class="col-9">
+            <div class="card">
+                <div class="card-header common-project-header common-space p-13">
+                    <div class="common-space">
+                        <div class="pe-sm-3">
+                            <h5>Vehicle Threshold Status Wise Comparison Graph</h5>
+                        </div>
+                    </div>
+                    <div class="common-align">
+                        <a class="btn btn-primary"
+                           href="{% url 'VehicleThresholdView' %}">+ Create Threshold</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="TownWiseDetailGraph" style="min-height: 365px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="card monthly-header">
+                <div class="card-body" style="padding-top: 0px;">
+                    <div class="monthly-target">
+                        <div class="position-relative" id="monthly_target">
+                            <canvas id="thresholdGauge"></canvas>
+                        </div>
+                    </div>
+                    <div class="target-content">
+                        <div class="common-box">
+                            <ul class="common-flex">
+                                <li>
+                                    <h6>Completed Count</h6><span class="common-space badge badge-light-success"> <svg
+                                        xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round"
+                                        class="feather feather-trending-up me-1"><polyline
+                                        points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline
+                                        points="17 6 23 6 23 12"></polyline></svg>
+                                    {{ completed_count }}</span>
+                                </li>
+                                <li>
+                                    <h6>Pending Count</h6><span class="common-space badge badge-light-danger"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round"
+                                        class="feather feather-trending-down me-1"><polyline
+                                        points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline
+                                        points="17 18 23 18 23 12"></polyline></svg>
+                                    {{ pending_count }}</span>
+                                </li>
+                                <li>
+                                    <h6>Expected Target %</h6><span
+                                        class="common-space badge badge-light-primary">90%</span>
+                                </li>
+                                <li>
+                                    <h6>Actual Target %</h6><span
+                                        class="common-space badge badge-light-info">{{ completed_percent }}%</span>
+                                </li>
+
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row candidate-wrapper">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body candidates-box px-0">
+                    <div class="table-responsive custom-scrollbar">
+                        <table class="table" id="vehicle-monitoring-table">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Vehicle</th>
+                                <th>Type</th>
+                                {#                                    <th>Distance</th>#}
+                                {#                                    <th>Ignition</th>#}
+                                {#                                    <th>Working Hours</th>#}
+                                {#                                    <th>Threshold</th>#}
+                                {#                                    New line#}
+                                <th>Expected Threshold</th>
+                                <th>Actual Threshold</th>
+                                <th>Status</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for data in vehicle_data_list %}
+                                <tr>
+                                    <th scope="row"
+                                        class="xsm-text text-capitalize align-middle">
+                                        {{ forloop.counter }}
+                                    </th>
+                                    <td>
+                                        <div class="common-flex align-items-center">
+                                            <div class="position-relative">
+                                                <img class="img-fluid rounded-circle"
+                                                     src="{% static 'assets/images/legend/suthra-icon/Dumper_10CM.svg' %}"
+                                                     alt="user">
+                                            </div>
+                                            <div><a class="f-w-500"
+                                                    href="#!">PITB# {{ data.pitb_code }}</a>
+                                                <p>Register# {{ data.register_no }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="common-f-start">
+                                            <div class="attachment">
+                                                <i class="fa-solid fa-car"></i>
+                                                <span>{{ data.vehicle_type }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <ul class="candidate-skill">
+                                            {% if data.expected_threshold %}
+                                                {% if data.expected_threshold.ignition_status == "No" %}
+                                                    <li class="mb-1">
+                                                        <span class="badge badge-light-success">Distance: {{ data.expected_threshold.distance }} km</span>
+                                                    </li>
+                                                    <li class="mb-1">
+                                                        <span class="badge badge-light-warning">Min Distance: {{ data.expected_threshold.min_distance }} km</span>
+                                                    </li>
+                                                    <li>
+                                                        <span class="badge badge-light-primary">Working Hours: {{ data.expected_threshold.working_hours }} hr</span>
+                                                    </li>
+                                                {% else %}
+                                                    <li>
+                                                        <span class="badge badge-light-primary">Working Hours: {{ data.expected_threshold.working_hours }} hr</span>
+                                                    </li>
+                                                {% endif %}
+                                            {% else %}
+                                                <li>
+                                                    <div class="common-flex">
+                                                        <span class="badge badge-light-primary">N/A</span>
+                                                    </div>
+                                                </li>
+                                            {% endif %}
+                                        </ul>
+                                    </td>
+                                    <td>
+                                        <ul class="candidate-skill">
+                                            <li class="mb-1">
+                                                <span class="badge badge-light-success">Distance: {{ data.distance_km|floatformat:2|intcomma }} km</span>
+                                            </li>
+                                            <li class="mb-1">
+                                                <span class="badge badge-light-primary">Working Hours: {{ data.working_hours|floatformat:2|intcomma }} hr</span>
+                                            </li>
+                                            <li>
+                                                <span class="badge badge-light-warning">Ignition: {{ data.ignition|default:"N/A" }}</span>
+                                            </li>
+                                        </ul>
+                                    </td>
+                                    <td>
+                                        {% if data.threshold == "Yes" %}
+                                            <span class="badge badge-light-success">Completed</span>
+                                        {% else %}
+                                            <span class="badge badge-light-danger">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    </td>
+                                    <!-- End NEw line mohid -->
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+{% endblock %}
+
+<!-- Plugins JS start-->
+{% block PluginsJS %}
+
+    <script src="{% static "assets/js/datatable/datatables/jquery.dataTables.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.select.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/select.bootstrap5.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/datatable.custom.js" %}"></script>
+    <script src="{% static "assets/js/sweet-alert/sweetalert.min.js" %}"></script>
+
+    <script src="{% static "assets/js/flat-pickr/flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/flat-pickr/custom-flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/select/bootstrap-select.min.js" %}"></script>
+    <script src="{% static "assets/js/tooltip-init.js" %}"></script>
+
+    <script src="{% static "assets/js/highchart/highcharts.js" %}"></script>
+
+    <script src="{% static 'assets/js/chart/apex-chart/apex-chart.js' %}"></script>
+
+{% endblock %}
+<!-- Plugins JS Ends-->
+
+<!-- Custom JS -->
+{% block CustomerJS %}
+
+    <script src="{% static "assets/app_js/GraphModel.js" %}" type="text/javascript"></script>
+
+    <script>
+
+        let GraphModelJS = null;
+
+        let vehicle_type_name_hierarchy = JSON.stringify({{ vehicle_type_name_hierarchy | safe }});
+        let vehicle_type_hierarchy = JSON.parse(vehicle_type_name_hierarchy);
+
+        let VehicleThres_DataGraph = JSON.stringify({{ VehicleThresholdStatusGraph | safe }});
+        let VehicleThreshold_DataGraph = JSON.parse(VehicleThres_DataGraph);
+
+        let countdownInterval;
+        let countdownSeconds = 60; // 1 minute
+        let isPaused = false;
+            
+        $(document).ready(function () {
+            GraphModelJS = new AppGraphModel();
+            GraphModelJS.appConstructor();
+
+            GraphModelJS.DisplayStackBarGraph_ComparisonWithValue('TownWiseDetailGraph', VehicleThreshold_DataGraph, vehicle_type_hierarchy);
+
+
+            //// SET SELECT DATE
+            const selectedDate = document.getElementById("selected_date");
+
+            // Set to a specific date (YYYY-MM-DD)
+            selectedDate.value = '{{ str_selected_date }}';
+            document.getElementById('pauseBtn').addEventListener('click', pauseCountdown);
+            document.getElementById('playBtn').addEventListener('click', playCountdown);
+            document.getElementById('resetBtn').addEventListener('click', resetCountdown);
+            startCountdown();
+            updateCountdownDisplay();
+
+        });
+
+        document.getElementById('exportExcelButton').addEventListener('click', function (e) {
+            e.preventDefault(); // Prevent default button behavior
+
+            // Create a new form that will submit to the export URL
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = "{% url 'export_vehicle_threshold_excel' %}";
+            form.style.display = 'none';
+
+            // Add CSRF token
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = 'csrfmiddlewaretoken';
+            csrfToken.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            form.appendChild(csrfToken);
+
+            // Add the current form fields
+            ['cmd_vehicle_type', 'start_date', 'end_date'].forEach(fieldName => {
+                const field = document.querySelector(`[name="${fieldName}"]`);
+                if (field && field.value) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = fieldName;
+                    input.value = field.value;
+                    form.appendChild(input);
+                }
+            });
+
+            // Submit the form
+            document.body.appendChild(form);
+            form.submit();
+        });
+        // Threshold Gauge Chart
+        const completedPercent = {{ completed_percent|default:0 }};
+        const pendingPercent = {{ pending_percent|default:0 }};
+
+        const gaugeCtx = document.getElementById('thresholdGauge').getContext('2d');
+        const gaugeChart = new Chart(gaugeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Completed', 'Pending'],
+                datasets: [{
+                    data: [completedPercent, pendingPercent],
+                    backgroundColor: ['#28a745', '#dc3545'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                rotation: -90,
+                circumference: 180,
+                cutout: '70%',
+                plugins: {
+                    legend: {display: false},
+                    tooltip: {enabled: false},
+                }
+            },
+            plugins: [{
+                // Custom plugin for center text
+                id: 'centerText',
+                afterDraw: chart => {
+                    const {ctx, chartArea: {width, height}} = chart;
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.font = 'bold 24px Arial';
+                    ctx.fillStyle = '#28a745';
+                    ctx.fillText(completedPercent + '%', width / 2, height / 2 - 10);
+                    ctx.font = 'bold 18px Arial';
+                    ctx.fillStyle = '#dc3545';
+                    ctx.fillText(pendingPercent + '%', width / 2, height / 2 + 20);
+                    ctx.restore();
+                }
+            }]
+        });
+
+        //new code today PITB PUSH API
+        document.getElementById('pushToPitbButton').addEventListener('click', function (e) {
+            e.preventDefault();
+
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const selectedDate = document.getElementById('selected_date').value;
+            const vehicleCode = document.getElementById('cmd_vehicle_list').value; // <-- Add this line
+            Swal.fire({
+                title: 'Pushing data...',
+                text: 'Please wait while data is being pushed to PITB.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch("{% url 'PushToPITB' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrfToken,
+                    "Accept": "application/json"
+                },
+                body: new URLSearchParams({
+                    selected_date: selectedDate,
+                    vehicle_code: vehicleCode
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    Swal.close();
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'API Response',
+                        html: `<pre>${JSON.stringify(data.api_response.body, null, 2)}</pre>`
+                    });
+                })
+                .catch(error => {
+                    Swal.close();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred while pushing data!'
+                    });
+                });
+        });
+        //end new code today
+
+        //// AUTO REFRES GRAPH ////
+        // lesson charts
+        function lessonCommonOption(data) {
+            return {
+                series: data.lessonYseries,
+                chart: {
+                    type: "donut",
+                    height: 80,
+                },
+                colors: data.color,
+                legend: {
+                    show: false,
+                },
+                stroke: {
+                    width: 1,
+                    colors: "var(--white)",
+                },
+                dataLabels: {
+                    enabled: false,
+                },
+                tooltip: {
+                    enabled: false,
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            labels: {
+                                show: true,
+                                value: {
+                                    fontSize: "11px",
+                                    fontFamily: "Rubik, sans-serif",
+                                    fontWeight: 400,
+                                    color: "var(--chart-text-color)",
+                                    offsetY: -12,
+                                    formatter: function (val) {
+                                        return val;
+                                    },
+                                },
+                                total: {
+                                    show: true,
+                                    showAlways: false,
+                                    label: "Total",
+                                    fontSize: "11px",
+                                    fontFamily: "Rubik, sans-serif",
+                                },
+                            },
+                        },
+                    },
+                },
+                states: {
+                    normal: {
+                        filter: {
+                            type: "none",
+                        },
+                    },
+                    hover: {
+                        filter: {
+                            type: "none",
+                        },
+                    },
+                    active: {
+                        allowMultipleDataPointsSelection: false,
+                        filter: {
+                            type: "none",
+                        },
+                    },
+                },
+            };
+        }
+
+        // lesson bootstrap data
+        const lesson3 = {
+            color: ["var(--theme-default)", "var(--chart-progress-light)", "var(--chart-progress-light)", "var(--chart-progress-light)", "var(--chart-progress-light)", "var(--chart-progress-light)", "var(--chart-progress-light)", "var(--chart-progress-light)", "var(--chart-progress-light)", "var(--chart-progress-light)"],
+            lessonYseries: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            {#lessonYseries: [10, 5, 5, 5, 5, 5, 5],#}
+            {#lessonYseries: [50, 10, 10, 10],#}
+            {#lessonYseries: [120],#}
+        };
+
+        const lessonactivechart3 = document.querySelector("#lessonChart3");
+        if (lessonactivechart3) {
+            var lessonChart3 = new ApexCharts(lessonactivechart3, lessonCommonOption(lesson3));
+            lessonChart3.render();
+        }
+
+        function startCountdown() {
+            // Check if we just reloaded the page
+            if (sessionStorage.getItem('justReloaded')) {
+                // Just remove the flag, but don't pause
+                sessionStorage.removeItem('justReloaded');
+                // Keep countdown running by not changing isPaused
+            }
+
+            // Always set up the interval
+            countdownInterval = setInterval(function () {
+                if (!isPaused) {
+                    countdownSeconds--;
+                    updateCountdownDisplay();
+
+                    if (countdownSeconds <= 0) {
+                        sessionStorage.setItem('justReloaded', 'true');
+                        clearInterval(countdownInterval);
+                        location.reload();
+                    }
+                }
+            }, 1000);
+
+            updateCountdownDisplay();
+        }
+
+        function updateCountdownDisplay() {
+            const minutes = Math.floor(countdownSeconds / 60);
+            const seconds = countdownSeconds % 60;
+            const displayTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('countdownTimer').textContent = displayTime;
+        }
+
+        function pauseCountdown() {
+            isPaused = true;
+            document.getElementById('pauseBtn').style.display = 'none';
+            document.getElementById('playBtn').style.display = 'inline-block';
+        }
+
+        function playCountdown() {
+            isPaused = false;
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            document.getElementById('playBtn').style.display = 'none';
+
+            // If the interval isn't running (e.g., after a page reload), start it again
+            if (!countdownInterval) {
+                countdownInterval = setInterval(function () {
+                    if (!isPaused) {
+                        countdownSeconds--;
+                        updateCountdownDisplay();
+
+                        if (countdownSeconds <= 0) {
+                            // Set a flag in session storage that we're about to reload
+                            sessionStorage.setItem('justReloaded', 'true');
+
+                            // Clear the interval to prevent it from continuing after reload
+                            clearInterval(countdownInterval);
+
+                            // Refresh the page
+                            location.reload();
+                        }
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetCountdown() {
+            countdownSeconds = 60;
+            updateCountdownDisplay();
+        }
+
+    </script>
+
+{% endblock %}

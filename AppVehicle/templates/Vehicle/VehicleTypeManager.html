@@ -1,0 +1,333 @@
+{% extends "master.html" %}
+{% load static %}
+{% load urlify %}
+{% load humanize %}
+
+{% block title %}Vehicle Type Manager{% endblock %}
+
+{% block PluginsCSS %}
+    <!-- Plugins css start-->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/flatpickr/flatpickr.min.css' %}">
+    <!-- Plugins css Ends-->
+
+    <!-- Bootstrap css-->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/bootstrap.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/select.bootstrap5.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/select/bootstrap-select.min.css' %}">
+
+    <!-- Responsive css-->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/responsive.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/jquery.dataTables.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/sweetalert2.css' %}">
+
+    <style>
+        .loading-spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+    </style>
+{% endblock %}
+
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3>Vehicle Type Manager System</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="index">
+                                <svg class="stroke-icon">
+                                    <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                                </svg>
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item">Vehicle</li>
+                        <li class="breadcrumb-item active">Type - Manager</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <!-- Container-fluid starts-->
+    <form method="post">
+        {% csrf_token %}
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="common-f-start justify-content-md-end mb-3">
+                        <div class="btn-group btn-group-action">
+                            <button class="btn btn-primary btn-md" id="addVehicleTypesBtn">
+                                <i class="fa fa-plus"></i> Add New Vehicle Types
+                                <span class="loading-spinner" id="loadingSpinner"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="row g-3 m-b-20">
+                        {% for vt in vehicle_types %}
+                            <div class="col-xxl-4 col-sm-6 box-col-6 inbox-data">
+                                <div class="card mb-0 h-100">
+                                    <div class="wishlist-box card-body">
+                                        <div>
+                                            <div class="wishlist-image">
+
+                                                <style>
+
+                                                    .user-profile .common-user-image .user-image .avatar {
+                                                        margin-bottom: calc(10px + 12 * (100vw - 320px) / 1600);
+                                                    }
+
+                                                    .user-profile .common-user-image .user-image .avatar .common-align > div img {
+                                                        width: calc(90px + 40 * (100vw - 320px) / 1600);
+                                                        height: calc(60px + 40 * (100vw - 320px) / 1600);
+                                                        max-width: calc(90px + 50 * (100vw - 320px) / 1600);
+                                                        max-height: calc(60px + 50 * (100vw - 320px) / 1600);
+                                                        border-radius: 4px;
+                                                        border: calc(5px + 2 * (100vw - 320px) / 1600) solid #fff;
+                                                        object-fit: contain;
+                                                    }
+
+                                                    .user-profile .common-user-image .user-image .avatar .common-align > div .icon-wrapper {
+                                                        height: calc(20px + 8 * (100vw - 320px) / 1600);
+                                                    }
+
+                                                </style>
+
+                                                <a href="javascript:void(0)">
+
+                                                    <div class="user-profile">
+                                                        <div class="common-user-image">
+                                                            <div class="user-image">
+                                                                <div class="avatar">
+                                                                    <div class="common-align">
+                                                                        <div>
+                                                                            {% if vt.vehicle_icon %}
+                                                                                <img id="output" src="{{ vt.vehicle_icon.url }}"
+                                                                                     class="table-img-large mx-auto">
+                                                                            {% else %}
+                                                                                <img id="output" src="{% static 'assets/images/logo/utslogo1.png' %}"
+                                                                                     class="table-img-large mx-auto">
+                                                                            {% endif %}
+                                                                            <input type="file" accept="image/*"
+                                                                                   data-id="{{ vt.id }}"
+                                                                                   id="vehicle-icon-upload">
+                                                                            <div class="icon-wrapper">
+                                                                                <i class="icofont icofont-pencil-alt-5"></i>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="wishlist-footer">
+                                                <span class="brand-name">Type</span>
+                                                <a href="javascript:void(0)">
+                                                    <h6>{{ vt.vehicle_type_name|default:"-" }}</h6>
+                                                </a>
+                                                <span class="txt-success mt-1">{{ vt.status|default:"Active" }}</span>
+                                                <h6 class="price">
+                                                    No. of Vehicles = <strong>
+                                                    {% for count_item in vehicle_types_count %}
+                                                        {% if count_item.vehicle_type == vt.vehicle_type_name %}
+                                                            {{ count_item.count }}
+                                                        {% endif %}
+                                                    {% empty %}
+                                                        0
+                                                    {% endfor %}
+                                                </strong>
+                                                </h6>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="col-xxl-12 col-sm-12 box-col-12 inbox-data">
+                                <div class="card mb-0 h-100">
+                                    <div class="wishlist-box card-body">
+                                        <div>
+                                            <div class="wishlist-image">
+                                                <a href="javascript:void(0)">
+                                                    <img src="{% static 'assets/images/logo/outs/logo1.png' %}"
+                                                         alt="no record">
+                                                </a>
+                                            </div>
+                                            <div class="wishlist-footer">
+                                                <span class="brand-name"></span>
+                                                <a href="javascript:void(0)">
+                                                    <h6>NO RECORD FOUND</h6>
+                                                </a>
+                                                <span class="txt-success mt-1"></span>
+                                                <h6 class="price">No. of Vehicles = 0</h6>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <!-- Container-fluid Ends-->
+{% endblock %}
+
+{% block PluginsJS %}
+    <script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'assets/js/select/bootstrap-select.min.js' %}"></script>
+    <script src="{% static 'assets/js/sweet-alert/sweetalert.min.js' %}"></script>
+{% endblock %}
+
+{% block CustomerJS %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Add Vehicle Types Button Handler
+            const addVehicleTypesBtn = document.getElementById('addVehicleTypesBtn');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+
+            if (addVehicleTypesBtn) {
+                addVehicleTypesBtn.addEventListener('click', function () {
+                    this.disabled = true;
+                    loadingSpinner.style.display = 'inline-block';
+
+                    const formData = new FormData();
+                    formData.append('add_vehicle_type', '1');
+                    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+                    fetch(window.location.href, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData,
+                        credentials: 'same-origin'
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            addVehicleTypesBtn.disabled = false;
+                            loadingSpinner.style.display = 'none';
+
+                            if (data.success) {
+                                if (window.Swal) {
+                                    Swal.fire({
+                                        title: "Success!",
+                                        text: data.message,
+                                        icon: "success",
+                                        timer: 3000,
+                                        showConfirmButton: false
+                                    }).then(() => {
+                                        window.location.reload();
+                                    });
+                                } else {
+                                    alert(data.message);
+                                    window.location.reload();
+                                }
+                            } else {
+                                if (window.Swal) {
+                                    Swal.fire({
+                                        title: "Info",
+                                        text: data.message,
+                                        icon: "info",
+                                        timer: 4000,
+                                        showConfirmButton: false
+                                    });
+                                } else {
+                                    alert(data.message);
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            addVehicleTypesBtn.disabled = false;
+                            loadingSpinner.style.display = 'none';
+                            console.error('Error:', error);
+                            if (window.Swal) {
+                                Swal.fire({
+                                    title: "Error!",
+                                    text: "An unexpected error occurred. Please try again.",
+                                    icon: "error",
+                                    timer: 3000,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                alert('An unexpected error occurred. Please try again.');
+                            }
+                        });
+                });
+            }
+
+            // When the user clicks the vehicle icon, trigger its hidden file input
+            const iconLinks = document.querySelectorAll('.vehicle-icon-link');
+            iconLinks.forEach(link => {
+                link.addEventListener('click', function () {
+                    const vehicleId = this.dataset.id;
+                    const fileInput = document.querySelector('#vehicle-icon-upload[data-id="' + vehicleId + '"]');
+                    if (fileInput) {
+                        fileInput.click();
+                    }
+                });
+            });
+
+            // Handle file selection and upload for vehicle icon
+            const iconUploads = document.querySelectorAll('#vehicle-icon-upload');
+            iconUploads.forEach(input => {
+                input.addEventListener('change', function () {
+                    const vehicleId = this.dataset.id;
+                    if (this.files.length > 0) {
+                        const file = this.files[0];
+                        const formData = new FormData();
+                        formData.append('update_vehicle_type', 'true');
+                        formData.append('vehicle_type_id', vehicleId);
+                        formData.append('vehicle_icon', file);
+                        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+                        fetch(window.location.href, {
+                            method: 'POST',
+                            headers: {'X-Requested-With': 'XMLHttpRequest'},
+                            body: formData,
+                            credentials: 'same-origin'
+                        })
+                            .then(resp => resp.json())
+                            .then(data => {
+                                if (data.success) {
+                                    window.location.reload();
+                                } else {
+                                    alert(data.message);
+                                }
+                            })
+                            .catch(() => {
+                                alert('Error updating vehicle icon.');
+                            });
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

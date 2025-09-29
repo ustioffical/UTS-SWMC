@@ -1,0 +1,1409 @@
+{% extends "master.html" %}
+{% load static %}
+{% load urlify %}
+{% load humanize %}
+
+{% block title %}VTCS Trip Data{% endblock %}
+
+<!-- Custom Plugins CSS -->
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/jquery.dataTables.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/sweetalert2.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select/bootstrap-select.min.css" %}">
+{% endblock %}
+<!--End Custom Plugins CSS -->
+
+{% block css %}
+    .trip-image {
+    height: 60px;
+    width: auto;
+    cursor: pointer;
+    }
+
+    .filter-row th {
+    padding: 5px;
+    }
+
+    .filter-row input, .filter-row select {
+    width: 100%;
+    padding: 5px;
+    }
+
+    .badge-success {
+    background-color: #24695c;
+    }
+
+    .badge-danger {
+    background-color: #e63757;
+    }
+
+    .badge-secondary {
+    background-color: #7a7f85;
+    }
+
+    .loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    }
+
+    .search-help {
+    font-size: 13px;
+    color: #6c757d;
+    margin-top: 5px;
+    }
+
+    .search-field {
+    background-color: #f8f9fa;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-family: monospace;
+    }
+{% endblock %}
+
+<!-- Header Page Hierarchy-->
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3>VTCS Trip Data</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/">
+                            <svg class="stroke-icon">
+                            </svg>
+                        </a></li>
+                        <li class="breadcrumb-item active">Trip List</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+<!-- Header Page Hierarchy-->
+
+{% block content %}
+
+    <!-- Container-fluid starts-->
+    <div class="container-fluid main-companies">
+
+        <div class="row">
+
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row g-3 custom-input">
+                            <div class="col-xl col-md-6">
+                                <label class="form-label">Vehicle With Type</label>
+                                <select id="cmd_vehicle_type"
+                                        name="cmd_vehicle_type"
+                                        class="selectpicker"
+                                        data-live-search="true">
+                                    <option value="NA" selected>Choose One</option>
+                                    {% for type in vehicle_type_list %}
+                                        <option value="{{ type.vehicle_type }}">
+                                            {{ type.vehicle_type }}
+                                            - {{ type.count }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-xl col-md-6">
+                                <label class="form-label">Vehicle Data</label>
+                                <select id="cmd_vehicle_list"
+                                        name="cmd_vehicle_list"
+                                        class="selectpicker" data-live-search="true"
+                                        data-size="10">
+                                    <option value="NA" selected>Choose One</option>
+                                </select>
+                            </div>
+                            <div class="col-xl col-md-6">
+                                <label class="form-label">Response Status</label>
+                                <select id="cmd_response_status" name="cmd_response_status" class="selectpicker"
+                                        data-live-search="true">
+                                    <option value="NA" selected>Choose One</option>
+                                    {% for status in api_trip_data_list %}
+                                        <option value="{{ status.response_status }}">
+                                            {{ status.response_status }}
+                                            - {{ status.count }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-xl col-md-6">
+                                <label class="form-label" for="trip_start_date">Trip Start Date</label>
+                                <div class="input-group flatpicker-calender">
+                                    <input class="form-control" type="date" id="trip_start_date" name="trip_start_date"
+                                           placeholder="2024-05-03" value="{{ today_date }}">
+                                </div>
+                            </div>
+                            <div class="col-xl col-md-6">
+                                <label class="form-label" for="trip_end_date">Trip End Date</label>
+                                <div class="input-group flatpicker-calender">
+                                    <input class="form-control" type="date" id="trip_end_date" name="trip_end_date"
+                                           placeholder="2024-05-03" value="{{ today_date }}">
+                                </div>
+                            </div>
+                            <div class="col d-flex justify-content-start align-items-center m-t-40">
+                                <a class="btn btn-primary f-w-500" href="#!">Submit</a>
+                            </div>
+                            <div class="col d-flex justify-content-start align-items-center m-t-40">
+                                <a href="{% url 'PushVTCSTripData_Form' %}" class="btn btn-primary">Add New Trip</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="row general-widget-wrapper">
+
+            <style>
+                .course-box .card-body {
+                    padding: 8px 5px;
+                }
+            </style>
+                        <!-- Bar Graph Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Vehicle Trip Data Analysis</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="vehicleDataChart" height="150"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End Bar Graph Section -->
+
+
+            <div class="col-sm-6 col-xl-6 col-lg-6 box-col-6">
+                <div class="row">
+
+                    <div class="col-sm-4 col-xl-4 col-lg-4 box-col-4">
+                        <div class="card course-box">
+                            <div class="card-body">
+                                <div class="course-widget">
+                                    <div class="course-icon all">
+                                        <svg class="fill-icon">
+                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="mb-0">
+                                            <span class="counter" id="summary_total_vehicle">{{ vehicle_count }}</span>
+                                        </h4>
+                                        <span class="f-light">Total Vehicle</span>
+                                        <a class="btn btn-light f-light m-t-10" href="javaScript:void(0)">
+                                            View List
+                                            <span class="ms-2">
+                                            <svg class="fill-icon f-light">
+                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#arrowright"></use>
+                                            </svg>
+                                        </span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="square-group">
+                                <li class="square-1 warning"></li>
+                                <li class="square-1 primary"></li>
+                                <li class="square-2 warning1"></li>
+                                <li class="square-3 danger"></li>
+                                <li class="square-4 light"></li>
+                                <li class="square-5 warning"></li>
+                                <li class="square-6 success"></li>
+                                <li class="square-7 success"></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-sm-4 col-xl-4 col-lg-4 box-col-4">
+                        <div class="card course-box">
+                            <div class="card-body">
+                                <div class="course-widget">
+                                    <div class="course-icon success">
+                                        <svg class="fill-icon">
+                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="mb-0">
+                                            <span class="counter" id="summary_moving_vehicle">{{completed_count}}</span>
+                                        </h4>
+                                        <span class="f-light">Completed Trip</span>
+                                        <a class="btn btn-light f-light m-t-10" href="javaScript:void(0)">
+                                            View List
+                                            <span class="ms-2">
+                                        <svg class="fill-icon f-light">
+                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#arrowright"></use>
+                                        </svg>
+                                    </span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="square-group">
+                                <li class="square-1 warning"></li>
+                                <li class="square-1 primary"></li>
+                                <li class="square-2 warning1"></li>
+                                <li class="square-3 danger"></li>
+                                <li class="square-4 light"></li>
+                                <li class="square-5 warning"></li>
+                                <li class="square-6 success"></li>
+                                <li class="square-7 success"></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-sm-4 col-xl-4 col-lg-4 box-col-4">
+                        <div class="card course-box">
+                            <div class="card-body">
+                                <div class="course-widget">
+                                    <div class="course-icon warning">
+                                        <svg class="fill-icon">
+                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="mb-0">
+                                            <span class="counter" id="summary_moving_vehicle">{{pending_count}}</span>
+                                        </h4>
+                                        <span class="f-light">Pending Trip</span>
+                                        <a class="btn btn-light f-light m-t-10" href="javaScript:void(0)">
+                                            View List
+                                            <span class="ms-2">
+                                        <svg class="fill-icon f-light">
+                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#arrowright"></use>
+                                        </svg>
+                                    </span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="square-group">
+                                <li class="square-1 warning"></li>
+                                <li class="square-1 primary"></li>
+                                <li class="square-2 warning1"></li>
+                                <li class="square-3 danger"></li>
+                                <li class="square-4 light"></li>
+                                <li class="square-5 warning"></li>
+                                <li class="square-6 success"></li>
+                                <li class="square-7 success"></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-xl-6 col-lg-6 box-col-6">
+                <div class="row">
+
+                    <div class="col-xl-4">
+                        <div class="card widget-1">
+                            <div class="card-body">
+                                <div class="widget-content">
+                                    <div class="widget-round primary">
+                                        <div class="bg-round">
+                                            <svg class="fill-primary">
+                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#c-invoice"></use>
+                                            </svg>
+                                            <svg class="half-circle svg-fill">
+                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#halfcircle"></use>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 class="counter" data-target="10905">{{ total_weight }}</h4><span class="f-light">Total Weight</span>
+                                    </div>
+                                </div>
+                                <div class="font-success f-w-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                         stroke-linejoin="round"
+                                         class="feather feather-trending-up bookmark-search me-1">
+                                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                        <polyline points="17 6 23 6 23 12"></polyline>
+                                    </svg>
+                                    <span class="txt-success">+50%</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-4">
+                        <div class="card widget-1">
+                            <div class="card-body">
+                                <div class="widget-content">
+                                    <div class="widget-round warning">
+                                        <div class="bg-round">
+                                            <svg>
+                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#c-profit"></use>
+                                            </svg>
+                                            <svg class="half-circle svg-fill">
+                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#halfcircle"></use>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4><span class="counter" data-target="80">80</span>%</h4><span class="f-light">Empty Weight</span>
+                                    </div>
+                                </div>
+                                <div class="font-danger f-w-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                         stroke-linejoin="round"
+                                         class="feather feather-trending-down bookmark-search me-1">
+                                        <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                                        <polyline points="17 18 23 18 23 12"></polyline>
+                                    </svg>
+                                    <span class="txt-danger">-20%</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-4">
+                        <div class="card widget-1">
+                            <div class="card-body">
+                                <div class="widget-content">
+                                    <div class="widget-round success">
+                                        <div class="bg-round">
+                                            <svg>
+                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#c-revenue"></use>
+                                            </svg>
+                                            <svg class="half-circle svg-fill">
+                                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#halfcircle"></use>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4><span class="counter" data-target="845">{{ net_weight }}</span></h4><span
+                                            class="f-light">Net Weight</span>
+                                    </div>
+                                </div>
+                                <div class="font-danger f-w-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                         stroke-linejoin="round"
+                                         class="feather feather-trending-down bookmark-search me-1">
+                                        <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                                        <polyline points="17 18 23 18 23 12"></polyline>
+                                    </svg>
+                                    <span class="txt-danger">-40%</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="row candidate-wrapper">
+            <style>
+                .trip-image {
+                    height: 60px;
+                    width: auto;
+                    cursor: pointer;
+                }
+
+                .filter-row th {
+                    padding: 5px;
+                }
+
+                .filter-row input, .filter-row select {
+                    width: 100%;
+                    padding: 5px;
+                }
+
+                .badge-success {
+                    background-color: #24695c;
+                }
+
+                .badge-danger {
+                    background-color: #e63757;
+                }
+
+                .badge-secondary {
+                    background-color: #7a7f85;
+                }
+
+                .loading {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(255, 255, 255, 0.7);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 1000;
+                }
+
+                .search-help {
+                    font-size: 13px;
+                    color: #6c757d;
+                    margin-top: 5px;
+                }
+
+                .search-field {
+                    background-color: #f8f9fa;
+                    padding: 2px 5px;
+                    border-radius: 3px;
+                    font-family: monospace;
+                }
+            </style>
+
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body candidates-box px-0">
+                        <div class="table-responsive custom-scrollbar">
+                            <table class="table" id="vehicle-monitoring-table">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Vehicle</th>
+                                    <th>Site Detail</th>
+                                    <th>Trip</th>
+                                    <th>Weight</th>
+                                    <th>PITB Response</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for data in api_trip_list %}
+                                    <tr>
+                                        <th scope="row"
+                                            class="xsm-text text-capitalize align-middle">
+                                            {{ forloop.counter }}
+                                        </th>
+                                        <td>
+                                            <div class="common-flex align-items-center">
+                                                <div class="position-relative">
+                                                    <img class="img-fluid rounded-circle"
+                                                         src="{% static 'assets/images/legend/suthra-icon/Dumper_10CM.svg' %}"
+                                                         alt="user">
+                                                </div>
+                                                <div><a class="f-w-500"
+                                                        href="#!">PITB# {{ data.vehicle_code.pitb_code }}</a>
+                                                    <p>Register# {{ data.vehicle_code.register_no }}</p>
+                                                </div>
+                                            </div>
+                                            <div class="common-f-start">
+                                                <div class="attachment">
+                                                    <i class="fa-solid fa-car"></i>
+                                                    <span>{{ data.vehicle_code.vehicle_type }}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <ul class="candidate-desc">
+                                                <li>
+                                                    <h6 class="c-light">Name:
+                                                        <span class="f-14">{{ data.site_id|slice:'3:' }} - {{ data.site_name }} </span>
+                                                    </h6>
+                                                </li>
+                                                <li>
+                                                    <h6 class="c-light">Coordinate: <span
+                                                            class="f-14">{{ data.lat }} - {{ data.lat }}</span>
+                                                    </h6>
+                                                </li>
+                                                <li>
+                                                    <ul class="common-flex pb-1">
+                                                        <li><img class="img-fluid"
+                                                                 src="{% if data.before_picture != "" %}/media/{{ data.before_picture }}{% else %}{% static "assets/images/lightgallry/08.jpg" %}{% endif %}"
+                                                                 alt="background"></li>
+                                                        <li><img class="img-fluid"
+                                                                 src="{% if data.after_picture != "" %}/media/{{ data.after_picture }}{% else %}{% static "assets/images/lightgallry/08.jpg" %}{% endif %}"
+                                                                 alt="background"></li>
+                                                        <li>
+                                                    </ul>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                        <td>
+                                            <ul class="candidate-skill">
+                                                <li>
+                                                    <p class="mb-2">Trip Date :
+                                                        <span>{{ data.trip_date }}</span>
+                                                        <span class="badge badge-light-primary"> Duration: {{ data.time_out|minutes_diff:data.time_in }} minutes</span>
+                                                    </p>
+                                                </li>
+                                                <li>
+                                                    <div class="common-flex">
+                                                        <span class="badge badge-light-secondary">Start: {{ data.time_in|date:"D, M d Y - h:i A" }}</span>
+                                                        <span class="badge badge-light-secondary">End:{{ data.time_out|date:"D, M d Y - h:i A" }}</span>
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                        <td>
+                                            <ul class="candidate-desc">
+                                                <li>
+                                                    <h6 class="c-light f-14">Net Weight:
+                                                        <span class="badge badge-light-success f-14 fw-bolder text-primary">
+                                                            {{ data.before_weight|subtract:data.after_weight|floatformat:0|intcomma }}</span>
+                                                        {#                                                        <span class="f-13 text-blink">{{ data.before_weight|subtract:data.after_weight }} </span>#}
+                                                    </h6>
+                                                </li>
+                                                <li>
+                                                    <h6 class="c-light f-14">Weighing Spot:
+                                                        <span class="f-13">{{ data.before_weight|floatformat:0|intcomma }} - {{ data.after_weight|floatformat:0|intcomma }}</span>
+                                                    </h6>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                        <td>
+                                            <ul class="candidate-skill">
+                                                <li>
+                                                    <p class="mb-2">Response ID :
+                                                        <span>
+                                                            {% if data.response_id %}
+                                                                {{ data.response_id }}{% else %}
+                                                                Waiting{% endif %}</span>
+                                                    </p>
+                                                </li>
+                                                <li>
+                                                    <div class="common-flex">
+                                                        <span class="badge badge-light-success">{{ data.response_status }}</span>
+                                                        <span class="badge badge-light-secondary">{{ data.remarks }}</span>
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                        <td>
+
+                                            <style>
+                                                .payment-methods .bg-payment {
+                                                    padding: 16px 11px;
+                                                    width: 50px;
+                                                    height: 50px;
+                                                }
+                                            </style>
+                                            <div class="payment-methods">
+
+                                                <div>
+                                                    <div class="bg-payment widget-hover" data-id="{{ data.id }}">
+                                                        <svg>
+                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#vector-upload"></use>
+                                                        </svg>
+                                                    </div>
+                                                    <span class="f-w-500 text-gray">Push</span>
+                                                </div>
+                                                <div>
+                                                    <div class="bg-payment widget-hover" data-id="{{ data.id }}">
+                                                        {#                                                    <div class="bg-payment widget-hover" onclick="VTCSModelJS.EditVTCSTripData_ShowModel();">#}
+                                                        <svg>
+                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#fill-editors"></use>
+                                                        </svg>
+                                                    </div>
+                                                    <span class="f-w-500 text-gray">Edit</span>
+                                                </div>
+
+                                            </div>
+
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Image Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">Trip Image</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img src="" id="modalImage" class="img-fluid" alt="Trip Image">
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Edit Modal -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Edit Trip Data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-trip-form" enctype="multipart/form-data">
+                        <input type="hidden" id="edit-trip-id">
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Select Vehicle Code</label>
+                                <select id="edit-vehicle-code" name="edit-vehicle-code" class="selectpicker">
+                                    <option value="">Select Vehicle</option>
+                                    {% for vehicle in vehicles_data_list %}
+                                        <option value="{{ vehicle.vehicle_code }}">
+                                            {{ vehicle.pitb_code }} - {{ vehicle.register_no }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Slip ID</label>
+                                <input type="text" id="edit-slip-id" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Before Weight (kg)</label>
+                                <input type="number" id="edit-before-weight" class="form-control" step="0.01">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">After Weight (kg)</label>
+                                <input type="number" id="edit-after-weight" class="form-control" step="0.01">
+                            </div>
+
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Trip Date</label>
+                                <input type="date" id="edit-trip-date" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Time In</label>
+                                <input type="datetime-local" id="edit-time-in" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Time Out</label>
+                                <input type="datetime-local" id="edit-time-out" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+
+                            <div class="col-md-3">
+                                <label class="form-label">Site Name</label>
+                                <input type="text" id="edit-site-name" class="form-control" readonly>
+                                <small class="text-muted">This field is read only.</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Site ID</label>
+                                <input type="text" id="edit-site-id" class="form-control">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Latitude</label>
+                                <input type="number" id="edit-lat" class="form-control" step="0.0000001" readonly>
+                                <small class="text-muted">This field is read only.</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Longitude</label>
+                                <input type="number" id="edit-long" class="form-control" step="0.0000001" readonly>
+                                <small class="text-muted">This field is read only.</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Before Picture: <span class="txt-danger">*</span> <span
+                                        id="edit-before-picture-preview"></span></label>
+                                <input type="file" id="edit-before-picture" name="before_picture" class="form-control"
+                                       accept="image/*">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">After Picture: <span class="txt-danger">*</span> <span
+                                        id="edit-after-picture-preview"></span></label>
+                                <input type="file" id="edit-after-picture" name="after_picture" class="form-control"
+                                       accept="image/*">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Before Roof Picture: <span
+                                        id="edit-before-roof-picture-preview"></span></label>
+                                <input type="file" id="edit-before-roof-picture" name="roof_before_picture"
+                                       class="form-control" accept="image/*">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">After Roof Picture: <span
+                                        id="edit-after-roof-picture-preview"></span></label>
+                                <input type="file" id="edit-after-roof-picture" name="roof_after_picture"
+                                       class="form-control" accept="image/*">
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="btn-save-changes" class="btn btn-primary">Save Edit Trip</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+<!-- Plugins JS start-->
+{% block PluginsJS %}
+
+    <script src="{% static "assets/js/datatable/datatables/jquery.dataTables.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.select.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/select.bootstrap5.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/datatable.custom.js" %}"></script>
+    <script src="{% static "assets/js/sweet-alert/sweetalert.min.js" %}"></script>
+
+    <script src="{% static "assets/js/flat-pickr/flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/flat-pickr/custom-flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/select/bootstrap-select.min.js" %}"></script>
+    <script src="{% static "assets/js/tooltip-init.js" %}"></script>
+
+    <script src="{% static "assets/js/datatable/datatables/dataTables.buttons.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/buttons.html5.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/buttons.print.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/jszip.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/pdfmake.min.js" %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+{% endblock %}
+<!-- Plugins JS Ends-->
+
+<!-- Custom JS -->
+{% block CustomerJS %}
+    <script src="{% static "assets/app_js/VehicleModel.js" %}" type="text/javascript"></script>
+    <script src="{% static "assets/app_js/VTCSModel.js" %}" type="text/javascript"></script>
+
+    <script>
+
+        let VehicleModelJS = null;
+        let VTCSModelJS = null;
+
+        let vehicle_list_with_type_code = '{% url "VehicleListWithTypeCode" %}';
+
+        $(document).ready(function () {
+
+            VehicleModelJS = new AppVehicleModel();
+            VehicleModelJS.appConstructor();
+
+            VTCSModelJS = new AppVTCSModel();
+            VTCSModelJS.appConstructor();
+
+
+            // Debug mode toggle for troubleshooting (hidden by default)
+            window.debugVTCS = false;
+
+            // Check if DataTable is already initialized to avoid the error
+            var existingTable = $.fn.dataTable.isDataTable('#vehicle-monitoring-table');
+            var dataTable;
+
+            if (!existingTable) {
+                // Initialize DataTable only if not already initialized
+                dataTable = $('#vehicle-monitoring-table').DataTable({
+                    pageLength: 10,
+                    lengthMenu: [5, 10, 25, 50, 100],
+                    dom: 'Blfrtip',
+                    buttons: [
+                        'copy', 'csv', 'excel', 'pdf', 'print'
+                    ],
+                    order: [[0, 'desc']]
+                });
+            } else {
+                // Get reference to existing DataTable instance
+                dataTable = $('#vehicle-monitoring-table').DataTable();
+            }
+
+            // Image modal functionality
+            $(document).on('click', '.trip-image', function () {
+                var imgSrc = $(this).attr('src');
+                $('#imageModal').modal('show');
+                $('#modalImage').attr('src', imgSrc);
+            });
+
+            // Edit button click handler with improved selector and ID detection
+            $(document).on('click', '.bg-payment.widget-hover:has(use[href*="#fill-editors"])', function () {
+                var row = $(this).closest('tr');
+                var dataId = $(this).data('id');
+
+                // If no data-id on the button itself, try getting from the first cell
+                if (!dataId) {
+                    dataId = row.find('th').first().text().trim();
+                }
+
+                if (dataId) {
+                    if (window.debugVTCS) console.log("Opening edit modal with ID:", dataId);
+                    openEditModal(dataId);
+                } else {
+                    Swal.fire({
+                        title: "Error",
+                        text: "Could not determine trip ID",
+                        icon: "error"
+                    });
+                }
+            });
+
+            // Push button click handler with improved selector and ID detection
+            $(document).on('click', '.bg-payment.widget-hover:has(use[href*="#vector-upload"])', function () {
+                var row = $(this).closest('tr');
+                var dataId = $(this).data('id');
+
+                // If no data-id on the button itself, try getting from the first cell
+                if (!dataId) {
+                    dataId = row.find('th').first().text().trim();
+                }
+
+                if (dataId) {
+                    // Show confirmation dialog
+                    Swal.fire({
+                        title: "Confirm Push",
+                        text: "Are you sure you want to push this data to PITB?",
+                        icon: "question",
+                        showCancelButton: true,
+                        confirmButtonText: "Yes, push it",
+                        cancelButtonText: "Cancel",
+                        confirmButtonColor: "#28a745",
+                        cancelButtonColor: "#dc3545"
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            pushTripData(dataId);
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: "Error",
+                        text: "Could not determine trip ID",
+                        icon: "error"
+                    });
+                }
+            });
+
+            // Function to push trip data
+            function pushTripData(tripId) {
+                // Show loading spinner
+                var loadingIndicator = $('<div class="loading"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+                $('body').append(loadingIndicator);
+
+                // Get CSRF token
+                function getCookie(name) {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                }
+
+                const csrftoken = getCookie('csrftoken');
+
+                if (window.debugVTCS) console.log("Pushing trip data for ID:", tripId);
+
+                // Send request to push data
+                $.ajax({
+                    url: "/SWMC/VTCS/push-trip-data/",
+                    method: "POST",
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    data: {
+                        'trip_id': tripId
+                    },
+                    success: function (response) {
+                        loadingIndicator.remove();
+
+                        if (window.debugVTCS) console.log("Push response:", response);
+
+                        if (response.status_code && response.status_code >= 200 && response.status_code < 300) {
+                            Swal.fire({
+                                title: "Success",
+                                text: "Trip data pushed to PITB successfully",
+                                icon: "success"
+                            }).then(function () {
+                                window.location.reload();
+                            });
+                        } else if (response.already_sent) {
+                            Swal.fire({
+                                title: "Info",
+                                text: "Trip data was already sent to PITB API.",
+                                icon: "info"
+                            });
+                        } else {
+                            Swal.fire({
+                                title: "Warning",
+                                text: "Failed to push data: " + (response.response_data || "Unknown error"),
+                                icon: "warning"
+                            });
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        loadingIndicator.remove();
+
+                        if (window.debugVTCS) {
+                            console.error("API Error:", error);
+                            console.error("Status:", xhr.status);
+                            console.error("Response:", xhr.responseText);
+                        }
+
+                        Swal.fire({
+                            title: "Error",
+                            text: "Failed to push trip data. Please try again.",
+                            icon: "error"
+                        });
+                    }
+                });
+            }
+
+// Function to open edit modal
+            function openEditModal(tripId) {
+                // Show loading indicator
+                var loadingIndicator = $('<div class="loading"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+                $('body').append(loadingIndicator);
+
+                if (window.debugVTCS) console.log("Fetching trip data for ID:", tripId);
+
+                $.ajax({
+                    //url: "/SWMC/VTCS/get-trip-data/" + tripId + "/",
+                    url: "/SWMC/VTCS/get-trip-data/" + tripId + "/",
+                    method: "GET",
+                    success: function (response) {
+                        loadingIndicator.remove();
+
+                        if (window.debugVTCS) console.log("Trip data received:", response);
+
+                        // Format the date for the input field (YYYY-MM-DD)
+                        var tripDate = '';
+                        if (response.trip_date) {
+                            tripDate = response.trip_date;
+                        }
+
+                        // Populate modal fields
+                        $('#edit-trip-id').val(tripId);
+                        $('#edit-trip-date').val(tripDate);
+                        $('#edit-site-name').val(response.site_name);
+
+                        // Set response status dropdown value, default to "Pending" if null or empty
+                        var responseStatus = response.response_status || "Pending";
+                        $('#edit-response-status').val(responseStatus);
+
+                        $('#edit-before-weight').val(response.before_weight);
+                        $('#edit-after-weight').val(response.after_weight);
+
+                        // Format datetime for datetime-local inputs
+                        if (response.time_in) {
+                            var timeIn = new Date(response.time_in);
+                            var formattedTimeIn = timeIn.toISOString().slice(0, 16);
+                            $('#edit-time-in').val(formattedTimeIn);
+                        }
+
+                        if (response.time_out) {
+                            var timeOut = new Date(response.time_out);
+                            var formattedTimeOut = timeOut.toISOString().slice(0, 16);
+                            $('#edit-time-out').val(formattedTimeOut);
+                        }
+
+                        // Set lat and long values
+                        $('#edit-lat').val(response.lat);
+                        $('#edit-long').val(response.long);
+
+                        // Show image previews if available
+                        // Replace the image name preview code with this image preview code
+
+                        // In the openEditModal success function:
+                        // Show image previews if available
+                        // In the openEditModal success function, add this debug code:
+                        if (response.vehicle_code) {
+                            let set_vehicle_code = "";
+                            // Also set the dropdown value
+                            if (typeof response.vehicle_code === 'object' && response.vehicle_code.vehicle_code) {
+                                // Set the value of the select
+                                set_vehicle_code = response.vehicle_code.vehicle_code;
+                            } else {
+                                // Set the value of the select
+                                set_vehicle_code = response.vehicle_code;
+                            }
+                            $('#edit-vehicle-code').val(set_vehicle_code);
+                            $('#edit-vehicle-code').selectpicker('refresh'); // update the UI
+
+                        }
+
+                        // Populate site ID and slip ID
+                        $('#edit-site-id').val(response.site_id || '');
+                        $('#edit-slip-id').val(response.slip_id || '');
+
+                        const currentOrigin = window.location.origin;
+                        if (response.before_picture) {
+                            let imgUrl = response.before_picture;
+                            if (imgUrl.startsWith('http')) {
+                                const urlWithoutHost = imgUrl.replace(/^https?:\/\/[^\/]+/, '');
+                                imgUrl = currentOrigin + urlWithoutHost;
+                            }
+                            $('#edit-before-picture-preview').html(`
+                                <img src="${imgUrl}" alt="Before Picture" class="img-fluid" style="max-height: 80px; border-radius: 5px; margin-left: 30px;">
+                            `);
+                        } else {
+                            $('#edit-before-picture-preview').html('<p class="text-muted">No image uploaded</p>');
+                        }
+
+                        // Apply similar changes to the other image previews
+                        if (response.after_picture) {
+                            let imgUrl = response.after_picture;
+                            if (imgUrl.startsWith('http')) {
+                                const urlWithoutHost = imgUrl.replace(/^https?:\/\/[^\/]+/, '');
+                                imgUrl = currentOrigin + urlWithoutHost;
+                            }
+                            $('#edit-after-picture-preview').html(`
+                                <img src="${imgUrl}" alt="After Picture" class="img-fluid mb-2" style="max-height: 80px; border-radius: 5px; margin-left: 30px;">
+                            `);
+                        } else {
+                            $('#edit-after-picture-preview').html('<p class="text-muted">No image uploaded</p>');
+                        }
+
+                        if (response.roof_before_picture) {
+                            let imgUrl = response.roof_before_picture;
+                            if (imgUrl.startsWith('http')) {
+                                const urlWithoutHost = imgUrl.replace(/^https?:\/\/[^\/]+/, '');
+                                imgUrl = currentOrigin + urlWithoutHost;
+                            }
+                            $('#edit-before-roof-picture-preview').html(`
+                                <img src="${imgUrl}" alt="Before Roof Picture" class="img-fluid mb-2" style="max-height: 80px; border-radius: 5px; margin-left: 5px;">
+                            `);
+                        } else {
+                            $('#edit-before-roof-picture-preview').html('<p class="text-muted">No image uploaded</p>');
+                        }
+
+                        if (response.roof_after_picture) {
+                            let imgUrl = response.roof_after_picture;
+                            if (imgUrl.startsWith('http')) {
+                                const urlWithoutHost = imgUrl.replace(/^https?:\/\/[^\/]+/, '');
+                                imgUrl = currentOrigin + urlWithoutHost;
+                            }
+                            $('#edit-after-roof-picture-preview').html(`
+                                <img src="${imgUrl}" alt="After Roof Picture" class="img-fluid mb-2" style="max-height: 80px; border-radius: 5px; margin-left: 5px;">
+                            `);
+                        } else {
+                            $('#edit-after-roof-picture-preview').html('<p class="text-muted">No image uploaded</p>');
+                        }    // Show modal
+                        $('#editModal').modal('show');
+                    },
+                    error: function (xhr, status, error) {
+                        loadingIndicator.remove();
+
+                        if (window.debugVTCS) {
+                            console.error("API Error:", error);
+                            console.error("Status:", xhr.status);
+                            console.error("Response:", xhr.responseText);
+                        }
+
+                        Swal.fire({
+                            title: "Error",
+                            text: "Failed to load trip details. Please try again.",
+                            icon: "error"
+                        });
+                    }
+                });
+            }
+
+            // Save changes button handler
+            $('#btn-save-changes').on('click', function () {
+                var tripId = $('#edit-trip-id').val();
+                var tripDate = $('#edit-trip-date').val();
+                var siteName = $('#edit-site-name').val();
+                var responseStatus = $('#edit-response-status').val();
+                var beforeWeight = $('#edit-before-weight').val();
+                var afterWeight = $('#edit-after-weight').val();
+                var timeIn = $('#edit-time-in').val();
+                var timeOut = $('#edit-time-out').val();
+                var lat = $('#edit-lat').val();
+                var long = $('#edit-long').val();
+
+                // Validate required fields
+                var requiredFields = {
+                    'Trip Date': tripDate,
+                    'Site Name': siteName,
+                    'Before Weight': beforeWeight,
+                    'After Weight': afterWeight
+                };
+
+                var missingFields = [];
+                for (var field in requiredFields) {
+                    if (!requiredFields[field]) {
+                        missingFields.push(field);
+                    }
+                }
+
+                if (missingFields.length > 0) {
+                    Swal.fire({
+                        title: "Missing Required Fields",
+                        text: "Please fill in: " + missingFields.join(", "),
+                        icon: "warning"
+                    });
+                    return;
+                }
+
+                // Handle "Pending" status to be sent as null to the server
+                if (responseStatus === "Pending") {
+                    responseStatus = "";  // Empty string will be treated as null in the backend
+                }
+
+                // Get form for file uploads
+                var formData = new FormData();
+                formData.append('trip_date', tripDate);
+                formData.append('site_name', siteName);
+                formData.append('response_status', responseStatus);
+                formData.append('before_weight', beforeWeight);
+                formData.append('after_weight', afterWeight);
+                formData.append('site_id', $('#edit-site-id').val());
+                formData.append('slip_id', $('#edit-slip-id').val());
+                formData.append('vehicle_code', $('#edit-vehicle-code').val());
+                // Format the datetime values to handle T separator
+                if (timeIn) {
+                    formData.append('time_in', timeIn.replace('T', ' ') + ':00');
+                }
+
+                if (timeOut) {
+                    formData.append('time_out', timeOut.replace('T', ' ') + ':00');
+                }
+
+                formData.append('lat', lat);
+                formData.append('long', long);
+
+                // Add image files if selected
+                if ($('#edit-before-picture')[0].files.length > 0) {
+                    formData.append('before_picture', $('#edit-before-picture')[0].files[0]);
+                }
+
+                if ($('#edit-after-picture')[0].files.length > 0) {
+                    formData.append('after_picture', $('#edit-after-picture')[0].files[0]);
+                }
+
+                // Show loading indicator
+                var loadingIndicator = $('<div class="loading"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+                $('body').append(loadingIndicator);
+
+                // Get CSRF token
+                function getCookie(name) {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                }
+
+                const csrftoken = getCookie('csrftoken');
+
+                if (window.debugVTCS) {
+                    console.log("Updating trip data for ID:", tripId);
+                    console.log("Form data:", {
+                        trip_date: tripDate,
+                        site_name: siteName,
+                        response_status: responseStatus,
+                        before_weight: beforeWeight,
+                        after_weight: afterWeight,
+                        time_in: timeIn ? timeIn.replace('T', ' ') + ':00' : null,
+                        time_out: timeOut ? timeOut.replace('T', ' ') + ':00' : null,
+                        lat: lat,
+                        long: long
+                    });
+                }
+
+                // Submit the form
+                $.ajax({
+                    //url: "/SWMC/VTCS/get-trip-data/" + tripId + "/",
+                    url: "/SWMC/VTCS/get-trip-data/" + tripId + "/",
+                    method: "PATCH",
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    processData: false,
+                    contentType: false,
+                    data: formData,
+                    success: function (response) {
+                        loadingIndicator.remove();
+                        $('#editModal').modal('hide');
+
+                        if (window.debugVTCS) console.log("Update successful:", response);
+
+                        Swal.fire({
+                            title: "Success",
+                            text: "Trip data updated successfully",
+                            icon: "success"
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        loadingIndicator.remove();
+
+                        if (window.debugVTCS) {
+                            console.error("API Error:", error);
+                            console.error("Status:", xhr.status);
+                            console.error("Response:", xhr.responseText);
+                        }
+
+                        // Try to parse the error response for better error messages
+                        var errorMessage = "Failed to update trip data";
+                        try {
+                            var errorData = JSON.parse(xhr.responseText);
+                            if (typeof errorData === 'object') {
+                                errorMessage = Object.entries(errorData)
+                                    .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+                                    .join('\n');
+                            }
+                        } catch (e) {
+                            errorMessage += ": " + (xhr.responseText || error);
+                        }
+
+                        Swal.fire({
+                            title: "Error",
+                            text: errorMessage,
+                            icon: "error"
+                        });
+                    }
+                });
+            });
+
+            // Fix for data-id attributes in widget buttons
+            function fixDataAttributes() {
+                $('.bg-payment.widget-hover').each(function () {
+                    var row = $(this).closest('tr');
+                    var counter = row.find('th').first().text().trim();
+
+                    // Set data-id if missing
+                    if (!$(this).data('id')) {
+                        $(this).attr('data-id', counter);
+                    }
+                });
+            }
+
+            // Add debug mode toggler (hidden by default, press Ctrl+Shift+D to show)
+            $('body').append('<button id="debug-mode" style="position:fixed; bottom:10px; right:10px; z-index:9999; display:none;" class="btn btn-sm btn-dark">Debug Mode</button>');
+
+            // Debug button handler
+            $('#debug-mode').on('click', function () {
+                window.debugVTCS = !window.debugVTCS;
+                if (window.debugVTCS) {
+                    $(this).text('Debug ON').removeClass('btn-dark').addClass('btn-danger');
+                    console.log("Debug mode enabled");
+                } else {
+                    $(this).text('Debug Mode').removeClass('btn-danger').addClass('btn-dark');
+                    console.log("Debug mode disabled");
+                }
+            });
+
+            // Press Ctrl+Shift+D to toggle debug panel
+            $(document).keydown(function (e) {
+                if (e.ctrlKey && e.shiftKey && e.which === 68) {
+                    $('#debug-mode').toggle();
+                    e.preventDefault();
+                }
+            });
+
+            // Run fixDataAttributes after page is fully loaded
+            setTimeout(fixDataAttributes, 200);
+
+
+            //// ONCHANGE FUNCTION FILL VEHICLE LIST
+            $("#cmd_vehicle_type").change(function (e) {
+                let selected_value = e.target.value;
+                //// FETCH VEHICLE LIST BY VEHICLE TYPE
+                VehicleModelJS.VehicleListWithTypeCodeView("cmd_vehicle_list", selected_value, "");
+            });
+
+        });
+
+        //Graph code
+        // Initialize bar graph
+const graphData = {{ graph_data|safe }};
+if (graphData && graphData.length > 0) {
+    const ctx = document.getElementById('vehicleDataChart').getContext('2d');
+
+    // Extract labels and datasets
+    const labels = graphData.map(item => item.vehicle_code__pitb_code);
+    const beforeWeightData = graphData.map(item => item.total_before_weight);
+    const afterWeightData = graphData.map(item => item.total_after_weight);
+    const netWeightData = graphData.map(item => item.net_weight);
+    const tripCountData = graphData.map(item => item.trip_count);
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Before Weight',
+                    data: beforeWeightData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'After Weight',
+                    data: afterWeightData,
+                    backgroundColor: 'rgba(255, 206, 86, 0.6)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Net Weight',
+                    data: netWeightData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Trip Count',
+                    data: tripCountData,
+                    backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                    borderWidth: 1,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Weight (kg)'
+                    }
+                },
+                y1: {
+                    beginAtZero: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Trip Count'
+                    }
+                }
+            }
+        }
+    });
+}
+    </script>
+{% endblock %}

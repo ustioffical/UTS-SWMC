@@ -1,0 +1,1595 @@
+@using WebTrack_Phase2.Models
+@using System.Web.Optimization
+@{
+    Layout = null;
+    string _imgUrl = Convert.ToString(WebTrack_Phase2.Helpers.Util.Getpicture());
+}
+
+<!DOCTYPE html>
+@* Latest *@
+<html>
+<head>
+    @Html.Partial("Header_Files")
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+    <link href="~/assets/global/css/Menu_CSS.css" rel="stylesheet" />
+</head>
+<body class="page-container-bg-solid page-header-fixed page-sidebar-closed-hide-logo">
+    <div class="loader-backdrop" style="display: block;">
+        <div class="loader" style="top: 35%">
+            <img src="~/Content/Loader/Loading.gif" style="width: 100%;" />
+        </div>
+    </div>
+    @Html.Partial("Header_Menu")
+    <div class="page-container">
+        @Html.Partial("Side_Menu")
+        <div id="UserApproval" class="modal fade bs-modal-lg" tabindex="-1" data-backdrop="static" data-keyboard="false">
+
+        </div>
+        <div id="RejectReaseon" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+                        <h4 class="modal-title">Confirmation</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group form-md-line-input has-success">
+                                    <div class="input-icon">
+                                        <input type="text" id="txtreason" class="form-control">
+                                        <label>Reject Reason</label>
+                                        <span class="help-block">Please enter reject reason</span>
+                                        <i class="fa fa-pencil-square-o"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" data-dismiss="modal" class="btn dark btn-outline">Cancel</button>
+                            <button type="button" class="btn green" onclick="SaveUserApprovalStatus($('#UserId').val(),'@EnumUserApproval.Reject',$('#txtreason').val())"><i class="fa fa-save"></i> Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page-content-wrapper">
+            <div class="page-content">
+                @RenderBody()
+            </div>
+        </div>
+
+        @Html.Partial("Footer")
+
+        <a href="javascript:;" class="page-quick-sidebar-toggler">
+            <i class="icon-login"></i>
+        </a>
+        <div class="page-quick-sidebar-wrapper" data-close-on-body-click="false">
+
+        </div>
+    </div>
+
+
+    <script src="https://maps.googleapis.com/maps/api/js?libraries=geometry&key=AIzaSyCXa94OrRd_j4wpEZNABWDauslpTDQSW9o" type="text/javascript"></script>
+
+    @Scripts.Render("~/bundles/ThemeScriptsCore")
+
+
+    <script src="~/assets/global/plugins/bootstrap-select/js/bootstrap-select.min.js" type="text/javascript"></script>
+    <script src="~/assets/global/plugins/morris/morris.min.js" type="text/javascript"></script>
+    <script src="~/assets/global/plugins/jquery-ui/jquery-ui.min.js" type="text/javascript"></script>
+    <script src="~/assets/global/plugins/select2/js/select2.full.min.js" type="text/javascript"></script>
+    <!-- END PAGE LEVEL PLUGINS -->
+    <!-- BEGIN THEME GLOBAL SCRIPTS -->
+    @Scripts.Render("~/bundles/PageLevelDashboard")
+    @Scripts.Render("~/bundles/ThemeScriptsDashBoard")
+    @Scripts.Render("~/bundles/ThemeScriptsLayout")
+
+    <!-- END THEME LAYOUT SCRIPTS -->
+
+    <script src="~/assets/global/plugins/jstree/dist/jstree.min.js" type="text/javascript"></script>
+    <script src="~/assets/pages/scripts/ui-tree.min.js" type="text/javascript"></script>
+    <script src="~/Scripts/GMaps/jsLabel.js"></script>
+
+    <link href="~/Content/jquery-ui.css" rel="stylesheet" />
+    @*<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>*@
+
+    <script src="~/Scripts/Leaflet/leaflet-src.js"></script>
+    <link href="~/Scripts/Leaflet/leaflet.groupedlayercontrol.css" rel="stylesheet" />
+
+    <style type="text/css">
+        .leaflet-marker-pane > * {
+            -webkit-transition: transform .3s linear;
+            -moz-transition: transform .3s linear;
+            -o-transition: transform .3s linear;
+            -ms-transition: transform .3s linear;
+            transition: transform .3s linear;
+        }
+
+        /*#EndDate {
+            z-index: 999999 !important;
+            position: relative;
+        }*/
+    </style>
+    <script src="~/Scripts/Leaflet/leaflet.js"></script>
+    <link href="~/Scripts/Leaflet/leaflet.css" rel="stylesheet" />
+    <script src="~/Scripts/Leaflet/leaflet.groupedlayercontrol.js"></script>
+    @RenderSection("scripts", false);
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+
+
+    <script src="~/assets/global/plugins/moment.min.js" type="text/javascript"></script>
+    <script src="~/assets/global/plugins/bootstrap-daterangepicker/daterangepicker.min.js" type="text/javascript"></script>
+    <script src="~/assets/global/plugins/bootstrap-datepicker/js/bootstrap-datepicker.min.js" type="text/javascript"></script>
+    <script src="~/assets/global/plugins/bootstrap-timepicker/js/bootstrap-timepicker.min.js" type="text/javascript"></script>
+    <script src="~/assets/global/plugins/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js" type="text/javascript"></script>
+    <script src="~/assets/global/plugins/clockface/js/clockface.js" type="text/javascript"></script>
+    <script src="~/assets/pages/scripts/components-date-time-pickers.min.js" type="text/javascript"></script>
+    <script src="~/assets/global/plugins/bootstrap-toastr/toastr.min.js" type="text/javascript"></script>
+    <!-- END PAGE LEVEL PLUGINS -->
+    <!-- BEGIN THEME GLOBAL SCRIPTS -->
+    <script src="~/assets/global/scripts/app.min.js" type="text/javascript"></script>
+    <!-- END THEME GLOBAL SCRIPTS -->
+    <!-- BEGIN PAGE LEVEL SCRIPTS -->
+    <script src="~/assets/pages/scripts/ui-toastr.min.js" type="text/javascript"></script>
+    <script src="~/assets/pages/scripts/components-date-time-pickers.min.js" type="text/javascript"></script>
+
+    <script type="text/javascript">
+
+
+        $(window).on("load", function () {
+            $(".loader-backdrop").fadeOut();
+        });
+
+
+        $(function () {
+            var tday = new Date();
+            var today = moment(tday).format('DD MMMM YYYY');
+            var Ctime = moment(tday).format('hh:mm A');
+
+            $("#StartDates").val(today + " - 12:00 AM");
+            $("#EndDates").val(today + " - " + Ctime);
+        });
+
+
+        $(document).ready(function () {
+            initializeMap();
+            currentLayers = new L.FeatureGroup();
+            IsUseGoogleLoc = document.getElementById('ctl00_CPH_Main_hdUseGoogleLocation').value;
+            isLocationUpdateInProgress = false;
+            $("a#History").addClass("active");
+        });
+
+        var count = 0;
+        $("#HideTree, #HideTreeBtn").on('click', function () {
+            if (count == 0) {
+                $("#tree").addClass("hide");
+                $("#ShowTree").removeClass('hide');
+                $("#mapparent").removeClass("col-sm-9");
+                $("#mapparent").addClass("col-sm-12");
+                $("#map").addClass('FullScreenMap');
+                toggleFullScreen();
+                toggleFullScreen();
+                count = 1;
+            }
+            else if (count == 1) {
+                $("#mapparent").removeClass("col-sm-12");
+                $("#mapparent").addClass("col-sm-9");
+                $("#ShowTree").addClass('hide');
+                $("#tree").removeClass("hide");
+                $("#map").addClass('FullScreenMap');
+                toggleFullScreen();
+                toggleFullScreen();
+                count = 0;
+            }
+        });
+        $("#FullScreen").on('click', function () {
+            toggleFullScreen();
+
+        });
+        $(document).ready(function () {
+            $("#hidesidebar").click();
+            $('.sidebar-toggler').click();
+
+        });
+        function toggleFullScreen() {
+            var doc = window.document;
+            var docEl = doc.documentElement;
+
+            var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+            var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+
+            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+                requestFullScreen.call(docEl);
+            }
+            else {
+                cancelFullScreen.call(doc);
+            }
+        }
+
+
+        var timeInterval = 0;
+        var selectednode = 1;
+        var Markers = [];
+        var Markers_N = [];
+        var pointerx = [];
+        var pointerx_N = [];
+        var Polylines = [];
+        var Polylines_N = [];
+        var speed = [];
+        var Layers = [];
+        var MarkerObject = {
+            ID: "",
+            DTSTamp: "",
+            Direction: "",
+            Distance: "",
+            EventStatus: "",
+            GPSTime: "",
+            Lat: 0.00,
+            Lng: 0.00,
+            Location: "",
+            PathStatus: "",
+            Speed: "",
+            Status: "",
+            VehRegNo: "",
+            TerminalNo: "",
+            HtmlData: "",
+            Layer: "",
+            Image: "",
+            OverLay: "",
+            PathStatus: "",
+            LtLn: [],
+        };
+        var MarkerObject_N = {
+            ID: "",
+            DTSTamp: "",
+            Direction: "",
+            Distance: "",
+            EventStatus: "",
+            GPSTime: "",
+            Lat: 0.00,
+            Lng: 0.00,
+            Location: "",
+            PathStatus: "",
+            Speed: "",
+            Status: "",
+            VehRegNo: "",
+            TerminalNo: "",
+            HtmlData: "",
+            Layer: "",
+            Image: "",
+            OverLay: "",
+            PathStatus: "",
+            LtLn: [],
+        };
+        $('#HistoryTree').on('changed.jstree', function (e, data) {
+
+            debugger;
+            if (data.action == 'select_node') {
+                var countSelected = data.selected.length;
+                if (data.node.parent == '#') {
+                    $('#HistoryTree').jstree().deselect_all(true);
+                    nodevalues = [];
+                    return;
+                }
+                if (data.node.children.length > 0) {
+                    $('#HistoryTree').jstree().deselect_all(true);
+                    nodevalues = [];
+                    return;
+                }
+                if (data.node.parent != '' && countSelected == 2) {
+                    var vaal = data.selected[1];
+                    if (vaal.match('~')) {
+                        ClientNodeChecked(data.selected[1]);
+                        data.instance.deselect_node([data.selected[0]]);
+                    }
+                    else {
+                        ClientNodeChecked(data.selected[0]);
+                    }
+                    countSelected = countSelected - 1;
+                }
+                if (data.node.parent != '' && countSelected == 3) {
+                    var vaal = data.selected[1];
+                    if (vaal.match('~')) {
+                        ClientNodeChecked(data.selected[1]);
+                        data.instance.deselect_node([data.selected[0]]);
+                    }
+                    else {
+                        ClientNodeChecked(data.selected[0]);
+                    }
+                    countSelected = countSelected - 1;
+                }
+                if (countSelected == 1) {
+                    ClientNodeChecked(data.selected[0]);
+                }
+            }
+            else if (data.action == 'deselect_node') {
+                map.remove();
+                initializeMap();
+                $("#Trip_View tr").remove();
+                $('#Trip_View').append('<tr id="1"> <th>Trip Start Date</th> <th>Trip End Date</th> <th>Distance</th> <th>Max Speed</th> <th>Avg Speed</th> <th>Trip Idle</th> <th>Trip Move</th> <th>Location From</th> <th>Location To</th> <th>View</th> </tr>');
+                ClearData();
+                selNodeFromatedValue == null;
+            }
+        });
+
+        function clearMap() {
+            for (i in map.layers) {
+                if (map.layers[i]._path != undefined) {
+                    try {
+                        m.removeLayer(map.layers[i]);
+                    }
+                    catch (e) {
+                        console.log("problem with " + e + map.layers[i]);
+                    }
+                }
+            }
+        }
+
+
+        var map = "";
+        var map_N = "";
+        function initializeMap() {
+            var tl1 = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+                osmAttrib: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+            });
+            var tl2 = L.tileLayer.wms('http://202.142.158.118:8080/geoserver/UTI-Tracking/wms?', {
+                layers: 'UTI-Tracking:UTS_Map'
+            });
+            var tl3 = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+                attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+                maxZoom: 21,
+                id: 'mapbox/streets-v11',
+                accessToken: 'sk.eyJ1IjoibmF1bWFuYXppeiIsImEiOiJja2lvbTk1ZjQxZHBkMnRtd2k1YWE1Ymp3In0.pLfcSiGa_ykUoNW9DJqC-g'
+            });
+            var basemaps = {
+                OpenStreet: tl1,
+                UTS_Map: tl2,
+                MapBox: tl3
+            };
+
+            var groups = {
+                cities: new L.LayerGroup()
+            };
+
+            window.ExampleData = {
+                LayerGroups: groups,
+                Basemaps: basemaps
+            };
+            map = L.map('map_canvas', {
+                center: [31.5204, 74.3587],
+                zoom: 21,
+                layers: [ExampleData.Basemaps.OpenStreet, ExampleData.LayerGroups.cities]
+            });
+
+            L.control.groupedLayers(ExampleData.Basemaps).addTo(map);
+        }
+        function initializeMap_N() {
+
+            MarkerObject_N = {
+                ID: "",
+                DTSTamp: "",
+                Direction: "",
+                Distance: "",
+                EventStatus: "",
+                GPSTime: "",
+                Lat: 0.00,
+                Lng: 0.00,
+                Location: "",
+                PathStatus: "",
+                Speed: "",
+                Status: "",
+                VehRegNo: "",
+                TerminalNo: "",
+                HtmlData: "",
+                Layer: "",
+                Image: "",
+                OverLay: "",
+                PathStatus: "",
+                LtLn: []
+            };
+
+            try {
+                map_N.remove();
+                map_N.removeLayer(currentLayers);
+            } catch (e) {
+
+            }
+
+            try {
+
+                pointerx_N = [];
+                Markers_N.length = 0;
+                Polylines_N.length = 0;
+                Layers_N.length = 0;
+            }
+            catch (e) {
+
+            }
+
+            var tl1 = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+                osmAttrib: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+            });
+
+
+            var tl2 = L.tileLayer.wms('http://202.142.158.118:8080/geoserver/UTI-Tracking/wms?', {
+                layers: 'UTI-Tracking:UTS_Map'
+            });
+
+            var tl3 = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+                attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+                maxZoom: 21,
+                id: 'mapbox.streets',
+                accessToken: 'pk.eyJ1IjoiYWZuYW5tYWtoZG9vbSIsImEiOiJjampsMWpsNmEwbTVoM2ttZmJ5OWo4c29sIn0.xWGhlZi5ATNTTsV1So2RAw'
+            });
+
+            var basemaps = {
+                OpenStreet: tl1,
+                UTS_Map: tl2,
+                MapBox: tl3
+            };
+
+            var groups = {
+                cities: new L.LayerGroup()
+            };
+            window.ExampleData = {
+                LayerGroups: groups,
+                Basemaps: basemaps
+            };
+            map_N = "";
+            map_N = L.map('map_canvas_N', {
+                center: [31.5204, 74.3587],
+                zoom: 22,
+                layers: [ExampleData.Basemaps.OpenStreet, ExampleData.LayerGroups.cities]
+            });
+            L.control.groupedLayers(ExampleData.Basemaps).addTo(map_N);
+
+            currentLayers_N = new L.FeatureGroup();
+        }
+
+        function ClientNodeChecked(nodevalue) {
+            selNodeFromatedValue = nodevalue;
+        }
+
+        function GenerateHistoryOnMap() {
+            debugger;
+            if ($('#StartDates').val() == '') {
+                toastr.error('From date can not be empty.');
+                return;
+            }
+            else if ($('#EndDates').val() == '') {
+                toastr.error('To date can not be empty.');
+                return;
+            }
+            var DateF = $('#StartDates').val().replace(/-/g, " ");
+            var dateFF = new Date(DateF);
+
+            var DateT = $('#EndDates').val().replace(/-/g, " ");
+            var dateTT = new Date(DateT);
+            var CDate = new Date();
+
+            if (dateFF > dateTT) {
+                toastr.error('Please enter correct start date and end date.');
+                return;
+            }
+            if (dateFF > CDate) {
+                toastr.error('Start Date should not be greater than today Date.');
+                return;
+            }
+            if (dateTT > CDate) {
+                toastr.error('End Date should not be greater than today Date.');
+                return;
+            }
+            var Difference_In_Time = dateTT.getTime() - dateFF.getTime();
+            var Difference_In_Days = Difference_In_Time / (1000 * 3600 * 24);
+
+            if (Difference_In_Days > 30) {
+                toastr.error('Selection date period can not be more than 30 days');
+                return;
+            }
+            if (selNodeFromatedValue == null || selNodeFromatedValue == '') {
+                toastr.error('Please select a vehicle first.');
+                return;
+            }
+            if (document.getElementById("ReplyRoute").checked == true && $("#ReplayInterval").val() == '') {
+                toastr.error('Please enter valid time interval');
+                return;
+            }
+            if (document.getElementById("ReplyRoute").checked == true && $("#ReplayInterval").val() == '0') {
+                toastr.error('Please enter valid time interval');
+                return;
+            }
+            if (document.getElementById("ReplyRoute").checked == false) {
+                updateData();
+            }
+            else {
+                replay5mins();
+            }
+        }
+
+        function Refresh() {
+            map.remove();
+            initializeMap();
+            $("#Trip_View tr").remove();
+            $('#Trip_View').append('<tr id="1"> <th>Trip Start Date</th> <th>Trip End Date</th> <th>Distance</th> <th>Max Speed</th> <th>Avg Speed</th> <th>Trip Idle</th> <th>Trip Move</th> <th>Location From</th> <th>Location To</th> <th>View</th> </tr>');
+            ClearData();
+        }
+
+        var eventType = "";
+        var IsUseGoogleLoc = null;
+        var selNodeFromatedValue = "";
+
+        function replay5mins() {
+            ClearData();
+            $("#loader").removeClass('hide');
+            $("#map_canvas").addClass('hide');
+
+            var dateFrom = $('#StartDates').val();
+            var dateTo = $('#EndDates').val();
+
+            var param = '{"nodeFormatedValue":"' + selNodeFromatedValue + '","DateFrom":"' + dateFrom + '","DateTo":"' + dateTo + '","isReplay":"1","EventType":"' + eventType + '","isUseGoogleLocation":"' + IsUseGoogleLoc + '"}';
+            $.ajax(
+                {
+                    type: "POST",
+                    url: '@Url.Action("GetVehicleHistoryReplay", "History")',
+                    data: param,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    cache: false,
+                    success: function (msg) {
+                        timeInterval = $("#ReplayInterval").val() * 1000;
+                        var rawData, data;
+                        rawData = JSON.parse(JSON.stringify(msg));
+                        data = JSON.parse(rawData);
+                        pathArr = new Array();
+                        var prv = null;
+                        for (var i = 0; i < data["Vehicles"].length; i++) {
+                            MarkerObject = new Object();
+                            MarkerObject.Direction = data["Vehicles"][i].Direction;
+                            MarkerObject.Distance = data["Vehicles"][i].Distance;
+                            MarkerObject.DTSTamp = data["Vehicles"][i].DTSTamp;
+                            MarkerObject.EventStatus = data["Vehicles"][i].EventStatus;
+                            MarkerObject.GPSTime = data["Vehicles"][i].GPSTime;
+                            MarkerObject.Lat = parseFloat(data["Vehicles"][i].lat);
+                            MarkerObject.TerminalNo = selNodeFromatedValue.split("~")[3].toString().trim()
+                            MarkerObject.Lng = parseFloat(data["Vehicles"][i].lng);
+                            MarkerObject.Location = data["Vehicles"][i].Location;
+                            MarkerObject.Speed = data["Vehicles"][i].Speed;
+                            MarkerObject.Status = data["Vehicles"][i].Status;
+                            MarkerObject.Temprature = data["Vehicles"][i].Temprature;
+                            MarkerObject.VehRegNo = data["Vehicles"][i].VehRegNo;
+                            MarkerObject.PathStatus = data["Vehicles"][i].PathStatus;
+                            Markers.push(MarkerObject);
+                            Polylines.push([MarkerObject.Lng, MarkerObject.Lat]);
+                            pointerx.push(new L.LatLng(MarkerObject.Lat, MarkerObject.Lng));
+                        }
+
+                        window.setInterval(MovingMarkers, timeInterval);
+                        CreatePolyLines();
+
+                        for (i = 0; i < data["Vehicles"].length; i++) {
+                            AddLastPositionToRepeater(data["Vehicles"][i].VehRegNo, data["Vehicles"][i].EngNo, data["Vehicles"][i].ChaNo, data["Vehicles"][i].DTSTamp, data["Vehicles"][i].Speed, data["Vehicles"][i].Status, data["Vehicles"][i].Distance, data["Vehicles"][i].Location, data["Vehicles"][i].GpsTime, i)
+                        }
+                        arrangeSno("tblSVD");
+                        for (i = 0; i < data["ActiveAlarm"].length; i++) {
+                            AddAlarmToRepeater(data["ActiveAlarm"][i].Vehicle, data["ActiveAlarm"][i].EngNo, data["ActiveAlarm"][i].ChaNo, data["ActiveAlarm"][i].EventTime, data["ActiveAlarm"][i].Speed, data["ActiveAlarm"][i].EventStatus, data["ActiveAlarm"][i].Location, i)
+                        }
+                        arrangeSno("tblSVA");
+                        $("#loader").addClass('hide');
+                        $("#map_canvas").removeClass('hide');
+                    },
+                    error: function (x, e) {
+                        $('#loader').addClass('hide');
+                        toastr.error("The call to the server side failed. " + x.responseText);
+                    }
+                }
+            );
+        }
+
+        function loadTrip() {
+            if ($('#StartDates').val() == '') {
+                toastr.error('From date can not be empty.');
+                return;
+            }
+            else if ($('#EndDates').val() == '') {
+                toastr.error('To date can not be empty.');
+                return;
+            }
+            var DateF = $('#StartDates').val().replace(/-/g, " ");
+            var dateFF = new Date(DateF);
+
+            var DateT = $('#EndDates').val().replace(/-/g, " ");
+            var dateTT = new Date(DateT);
+            var CDate = new Date();
+
+            if (dateFF > dateTT) {
+                toastr.error('Please enter correct start date and end date.');
+                return;
+            }
+            if (dateFF > CDate) {
+                toastr.error('Start Date should not be greater than today Date.');
+                return;
+            }
+            if (dateTT > CDate) {
+                toastr.error('End Date should not be greater than today Date.');
+                return;
+            }
+            var Difference_In_Time = dateTT.getTime() - dateFF.getTime();
+            var Difference_In_Days = Difference_In_Time / (1000 * 3600 * 24);
+
+            if (Difference_In_Days > 30) {
+                toastr.error('Selection date period can not be more than 30 days');
+                return;
+            }
+            if (selNodeFromatedValue == null || selNodeFromatedValue == '') {
+                toastr.error('Please select a vehicle first.');
+                return;
+            }
+            $("#loader").removeClass('hide');
+            var dateFrom = $('#StartDates').val();
+            var dateTo = $('#EndDates').val();
+            var param = '{"nodeFormatedValue":"' + selNodeFromatedValue + '","DateFrom":"' + dateFrom + '","DateTo":"' + dateTo + '","isReplay":"0","EventType":"' + eventType + '","isUseGoogleLocation":"' + IsUseGoogleLoc + '"}';
+
+            $.ajax(
+               {
+                   type: "POST",
+                   url: '@Url.Action("GetVehicleHistory_trip", "History")',
+                   data: param,
+                   contentType: "application/json; charset=utf-8",
+                   dataType: "json",
+                   async: true,
+                   cache: false,
+                   success: function (T_data) {
+                       $("#Trip_View tr").remove();
+                       $('#Trip_View').append('<tr id="1"> <th>Trip Start Date</th> <th>Trip End Date</th> <th>Distance</th> <th>Max Speed</th> <th>Avg Speed</th> <th>Trip Idle</th> <th>Trip Move</th> <th>Location From</th> <th>Location To</th> <th>View</th> </tr>');
+                       $.each(T_data, function (index, value) {
+                           $('#Trip_View').append('<tr id="1"> <td>' + value.TripGpsTimeFrom_WS + '</td> <td>' + value.TripGpsTimeTo_WS + '</td> <td>' + value.Distance + '</td> <td>' + value.MaxSpeed + '</td> <td>' + value.AvgSpeed + '</td> <td>' + value.TripIdle + '</td> <td>' + value.TripMove + '</td> <td>' + value.LocationFrom + '</td> <td>' + value.LocationTo + '</td> <td><a  data-target="#static" data-toggle="modal" onclick="ShowTrip( &#39;' + value.TripGpsTimeFrom_WS.trim() + '&#39;,&#39;' + value.TripGpsTimeTo_WS.trim() + '&#39;)" > View Map </a></td> </tr>');
+                       });
+                       $("#loader").addClass('hide');
+                   },
+                   error: function (x, e) {
+                       $("#loader").addClass('hide');
+                       $("#map_canvas").removeClass('hide');
+                       toastr.error("The call to the server side failed. " + x.responseText);
+                   }
+               });
+        }
+        function loadSummary() {
+
+            if ($('#StartDates').val() == '') {
+                toastr.error('From date can not be empty.');
+                $("#S_Close").click();
+                return;
+            }
+            else if ($('#EndDates').val() == '') {
+                toastr.error('To date can not be empty.');
+                $("#S_Close").click();
+                return;
+            }
+            var DateF = $('#StartDates').val().replace(/-/g, " ");
+            var dateFF = new Date(DateF);
+
+            var DateT = $('#EndDates').val().replace(/-/g, " ");
+            var dateTT = new Date(DateT);
+            var CDate = new Date();
+
+            if (dateFF > dateTT) {
+                toastr.error('Please enter correct start date and end date.');
+                $("#S_Close").click();
+                return;
+            }
+            if (dateFF > CDate) {
+                toastr.error('Start Date should not be greater than today Date.');
+                $("#S_Close").click();
+                return;
+            }
+            if (dateTT > CDate) {
+                toastr.error('End Date should not be greater than today Date.');
+                $("#S_Close").click();
+                return;
+            }
+            var Difference_In_Time = dateTT.getTime() - dateFF.getTime();
+            var Difference_In_Days = Difference_In_Time / (1000 * 3600 * 24);
+
+            if (Difference_In_Days > 30) {
+                toastr.error('Selection date period can not be more than 30 days');
+                $("#S_Close").click();
+                return;
+            }
+            if (selNodeFromatedValue == null || selNodeFromatedValue == '') {
+                toastr.error('Please select a vehicle first.');
+                $("#S_Close").click();
+                return;
+            }
+            $("#loader2").removeClass('hide');
+            var dateFrom = $('#StartDates').val();
+            var dateTo = $('#EndDates').val();
+            var param = '{"nodeFormatedValue":"' + selNodeFromatedValue + '","DateFrom":"' + dateFrom + '","DateTo":"' + dateTo + '","isReplay":"0","EventType":"' + eventType + '","isUseGoogleLocation":"' + IsUseGoogleLoc + '"}';
+            window.scrollBy(0, 300);
+            $.ajax(
+               {
+                   type: "POST",
+                   url: '@Url.Action("GetVehicleHistory_Summary", "History")',
+                   data: param,
+                   contentType: "application/json; charset=utf-8",
+                   dataType: "json",
+                   async: true,
+                   cache: false,
+                   success: function (T_data) {
+                       $("#Summary_View tr").remove();
+                       $('#Summary_View').append('<tr id="1"> <th>Stop Time </th> <th>Idle Time </th> <th>Move Time </th> <th>Total Trips </th> <th>Max Speed </th> <th>Avg Speed </th> <th>GeoFence Alert </th> <th>Over Speed Alert </th> <th>Power Alert </th> <th>Start Mileage</th> <th>End Mileage </th> <th>Location From </th> <th>Location To </th> <th>Total </th> <th>Trip </th> <th>offset </th> </tr>');
+                       $.each(T_data, function (index, value) { // value.TripGpsTimeFrom_WS
+                           $('#Summary_View').append('<tr id="1"> <td> ' + value.TotalStopTimeCon + ' </td> <td> ' + value.TotalIdleTimeCon + ' </td> <td>' + value.TotalMoveTimeCon + ' </td> <td>' + value.TotalNoOfTrips + ' </td> <td>' + value.MaxSpeed + ' </td> <td>' + value.AvgSpeed + ' </td> <td>' + value.NoOfGeoFenceAlert + ' </td> <td>' + value.NoOfOverSpeedAlert + ' </td> <td>' + value.NoOfPowerAlert + ' </td> <td>' + value.MileageValStart + ' </td> <td>' + value.MileageValEnd + ' </td> <td>' + value.PollLocationFrom + ' </td> <td>' + value.PollLocationTo + ' </td> <td>' + value.Total + ' </td> <td>' + value.Trip + ' </td> <td>' + value.offset + ' </td> </tr>');
+                       });
+                       $("#loader2").addClass('hide');
+                   },
+                   error: function (x, e) {
+                       $("#loader2").addClass('hide');
+                       toastr.error("The call to the server side failed. " + x.responseText);
+                   }
+               });
+        }
+
+        function ShowTrip(StartDates, EndDates) {
+
+            if (replayIntervalToClearId != null) {
+                window.clearInterval(replayIntervalToClearId);
+            }
+
+            $("#loader1").removeClass('hide');
+            document.documentElement.scrollTop = 0;
+            initializeMap_N();
+            setTimeout(function () { map_N.invalidateSize() }, 200);
+            var param = '{"nodeFormatedValue":"' + selNodeFromatedValue + '","DateFrom":"' + StartDates + '","DateTo":"' + EndDates + '","isReplay":"0","EventType":"' + eventType + '","isUseGoogleLocation":"' + IsUseGoogleLoc + '"}';
+            $.ajax(
+                {
+                    type: "POST",
+                    url: '@Url.Action("GetVehicleHistory_N", "History")',
+                    data: param,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    cache: false,
+                    success: function (msg) {
+                        var rawData, data;
+                        rawData = JSON.parse(JSON.stringify(msg));
+                        data = JSON.parse(rawData);
+                        pathArr = new Array();
+                        var prv = null;
+                        Markers_N = [];
+                        for (var i = 0; i < data["Vehicles"].length; i++) {
+                            MarkerObject_N = new Object();
+                            MarkerObject_N.Direction = data["Vehicles"][i].Direction;
+                            MarkerObject_N.Distance = data["Vehicles"][i].Distance;
+                            MarkerObject_N.DTSTamp = data["Vehicles"][i].DTSTamp;
+                            MarkerObject_N.EventStatus = data["Vehicles"][i].EventStatus;
+                            MarkerObject_N.GPSTime = data["Vehicles"][i].GPSTime;
+                            MarkerObject_N.Lat = parseFloat(data["Vehicles"][i].lat);
+                            MarkerObject_N.TerminalNo = selNodeFromatedValue.split("~")[3].toString().trim()
+                            MarkerObject_N.Lng = parseFloat(data["Vehicles"][i].lng);
+                            MarkerObject_N.Location = data["Vehicles"][i].Location;
+                            MarkerObject_N.Speed = data["Vehicles"][i].Speed;
+                            MarkerObject_N.Status = data["Vehicles"][i].Status;
+                            MarkerObject_N.Temprature = data["Vehicles"][i].Temprature;
+                            MarkerObject_N.VehRegNo = data["Vehicles"][i].VehRegNo;
+                            MarkerObject_N.PathStatus = data["Vehicles"][i].PathStatus;
+
+                            MarkerObject_N.Odometers = data["Vehicles"][i].Odometers;
+                            MarkerObject_N.FuelLevel = data["Vehicles"][i].FuelLevel;
+
+                            Markers_N.push(MarkerObject_N);
+                            speed.push(MarkerObject_N.Speed);
+
+                            Polylines_N.push([MarkerObject_N.Lng, MarkerObject_N.Lat]);
+                            pointerx_N.push(new L.LatLng(MarkerObject_N.Lat, MarkerObject_N.Lng));
+                        }
+                        if (Markers_N[0] == null) {
+                            toastr.error("Device is Offline. No data available during these dates");
+                        }
+                        CreateMarkers_N();
+                        CreatePolyLines_N();
+                        $("#loader1").addClass('hide');
+                    },
+                    error: function (x, e) {
+                        toastr.error("The call to the server side failed. " + x.responseText);
+                        $("#loader1").addClass('hide');
+                    }
+                });
+        }
+
+        function updateData() {
+            ClearData();
+            if (replayIntervalToClearId != null) {
+                window.clearInterval(replayIntervalToClearId);
+            }
+            $("#loader").removeClass('hide');
+            $("#map_canvas").addClass('hide');
+            var dateFrom = $('#StartDates').val();
+            var dateTo = $('#EndDates').val();
+            var param = '{"nodeFormatedValue":"' + selNodeFromatedValue + '","DateFrom":"' + dateFrom + '","DateTo":"' + dateTo + '","isReplay":"0","EventType":"' + eventType + '","isUseGoogleLocation":"' + IsUseGoogleLoc + '"}';
+            $.ajax(
+                {
+                    type: "POST",
+                    url: '@Url.Action("GetVehicleHistory", "History")',
+                    data: param,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    cache: false,
+                    success: function (msg) {
+                        var rawData, data;
+                        rawData = JSON.parse(JSON.stringify(msg));
+                        data = JSON.parse(rawData);
+                        pathArr = new Array();
+                        var prv = null;
+                        debugger;
+                        for (var i = 0; i < data["Vehicles"].length; i++) {
+                            MarkerObject = new Object();
+                            MarkerObject.Direction = data["Vehicles"][i].Direction;
+                            MarkerObject.Distance = data["Vehicles"][i].Distance;
+                            MarkerObject.DTSTamp = data["Vehicles"][i].DTSTamp;
+                            MarkerObject.EventStatus = data["Vehicles"][i].EventStatus;
+                            MarkerObject.GPSTime = data["Vehicles"][i].GPSTime;
+                            MarkerObject.Lat = parseFloat(data["Vehicles"][i].lat);
+                            MarkerObject.TerminalNo = selNodeFromatedValue.split("~")[3].toString().trim()
+                            MarkerObject.Lng = parseFloat(data["Vehicles"][i].lng);
+                            MarkerObject.Location = data["Vehicles"][i].Location;
+                            MarkerObject.Speed = data["Vehicles"][i].Speed;
+                            MarkerObject.Status = data["Vehicles"][i].Status;
+                            MarkerObject.Temprature = data["Vehicles"][i].Temprature;
+                            MarkerObject.VehRegNo = data["Vehicles"][i].VehRegNo;
+                            MarkerObject.PathStatus = data["Vehicles"][i].PathStatus;
+
+                            MarkerObject.Odometers = data["Vehicles"][i].Odometers;
+                            MarkerObject.FuelLevel = data["Vehicles"][i].FuelLevel;
+                            Markers.push(MarkerObject);
+                            speed.push(MarkerObject.Speed);
+                            Polylines.push([MarkerObject.Lng, MarkerObject.Lat]);
+                            pointerx.push(new L.LatLng(MarkerObject.Lat, MarkerObject.Lng));
+                        }
+                        if (Markers[0] == null) {
+                            toastr.error("Device is Offline. No data available during these dates");
+                        }
+                        CreateMarkers();
+                        CreatePolyLines();
+                        for (i = 0; i < data["Vehicles"].length; i++) {
+                            AddLastPositionToRepeater(data["Vehicles"][i].VehRegNo, data["Vehicles"][i].EngNo, data["Vehicles"][i].ChaNo, data["Vehicles"][i].DTSTamp, data["Vehicles"][i].Speed, data["Vehicles"][i].Status, data["Vehicles"][i].Distance, data["Vehicles"][i].Location, data["Vehicles"][i].GpsTime, i)
+                        }
+                        arrangeSno("tblSVD");
+                        for (i = 0; i < data["ActiveAlarm"].length; i++) {
+                            //wr.activeAlarm.push(data["ActiveAlarm"][i]);
+                            AddAlarmToRepeater(data["ActiveAlarm"][i].Vehicle, data["ActiveAlarm"][i].EngNo, data["ActiveAlarm"][i].ChaNo, data["ActiveAlarm"][i].EventTime, data["ActiveAlarm"][i].Speed, data["ActiveAlarm"][i].EventStatus, data["ActiveAlarm"][i].Location, i)
+                        }
+                        arrangeSno("tblSVA");
+                        $("#loader").addClass('hide');
+                        $("#map_canvas").removeClass('hide');
+                    },
+                    error: function (x, e) {
+
+                        $("#loader").addClass('hide');
+                        $("#map_canvas").removeClass('hide');
+                        toastr.error("The call to the server side failed. " + x.responseText);
+                    }
+                }
+            );
+        };
+
+
+        function LoadHistortAndTripData() {
+            if ($('#StartDates').val() == '') {
+                toastr.error('From date can not be empty.');
+                $("#S_Close").click();
+                return;
+            }
+            else if ($('#EndDates').val() == '') {
+                toastr.error('To date can not be empty.');
+                $("#S_Close").click();
+                return;
+            }
+            var DateF = $('#StartDates').val().replace(/-/g, " ");
+            var dateFF = new Date(DateF);
+
+            var DateT = $('#EndDates').val().replace(/-/g, " ");
+            var dateTT = new Date(DateT);
+            var CDate = new Date();
+
+            if (dateFF > dateTT) {
+                toastr.error('Please enter correct start date and end date.');
+                $("#S_Close").click();
+                return;
+            }
+            if (dateFF > CDate) {
+                toastr.error('Start Date should not be greater than today Date.');
+                $("#S_Close").click();
+                return;
+            }
+            if (dateTT > CDate) {
+                toastr.error('End Date should not be greater than today Date.');
+                $("#S_Close").click();
+                return;
+            }
+            var Difference_In_Time = dateTT.getTime() - dateFF.getTime();
+            var Difference_In_Days = Difference_In_Time / (1000 * 3600 * 24);
+
+            if (Difference_In_Days > 30) {
+                toastr.error('Selection date period can not be more than 30 days');
+                $("#S_Close").click();
+                return;
+            }
+            if (selNodeFromatedValue == null || selNodeFromatedValue == '') {
+                toastr.error('Please select a vehicle first.');
+                $("#S_Close").click();
+                return;
+            }
+
+            if (document.getElementById("ReplyRoute").checked == true && $("#ReplayInterval").val() == '') {
+                toastr.error('Please enter valid time interval');
+                return;
+            }
+            if (document.getElementById("ReplyRoute").checked == true && $("#ReplayInterval").val() == '0') {
+                toastr.error('Please enter valid time interval');
+                return;
+            }
+            if (replayIntervalToClearId != null) {
+                window.clearInterval(replayIntervalToClearId);
+            }
+            $("#loader").removeClass('hide');
+            $("#map_canvas").addClass('hide');
+            if (document.getElementById("ReplyRoute").checked == false) {
+                updateData();
+            }
+            else {
+                replay5mins();
+            }
+            loadTrip();
+        };
+
+        function arrangeSno(tableId) {
+            var tblObj = document.getElementById(tableId);
+            var no_of_rows = tblObj.rows.length;
+            for (var i = 0; i < no_of_rows - 1; i++)
+                tblObj.rows[i + 1].cells[0].innerHTML = i + 1;
+        };
+
+        var start = "";
+        var end = "";
+
+        $.ajax({
+            'async': false,
+            'type': "GET",
+            'url': '@Url.Action("GetStartPoint", "History")',
+            'global': false,
+            'data': 'json',
+            'success': function (data) {
+                start = JSON.stringify(data[0].StartPointPath);
+                end = JSON.stringify(data[0].EndPointPath);
+
+                console.log('Start: ' + JSON.stringify(data[0].StartPointPath));
+                console.log('End: ' + JSON.stringify(data[0].EndPointPath));
+                console.log('History: ' + JSON.stringify(data));
+            }
+        });
+
+
+        var ch = 0;
+        var prelat = 0.00;
+        var prelng = 0.00;
+
+        function CreateMarkers() {
+            var vecs = [];
+            ch++;
+            var pointx = [];
+            try {
+                Markers[0].PathStatus = "Start";
+                Markers[Markers.length - 1].PathStatus = "FINISH";
+            } catch (x) { }
+
+            for (var i = 0; i < Markers.length; i++) {
+                var sizex = 0;
+                var shadowUrl = 'images/directions/shadex.png';
+                if ((i > 0) && (i < Markers.length - 1)) {
+                    sizex = 16;
+                }
+                else {
+                    sizex = 26;
+                    shadowUrl = "";
+                }
+
+                var car = Markers[i];
+                var xIcon = L.icon({
+                    iconUrl: GetImg(car),
+                    shadowUrl: shadowUrl,
+                    iconSize: [sizex, sizex],
+                    shadowSize: [sizex, sizex]
+                });
+
+                var layerx = L.marker([car.Lat, car.Lng], { icon: xIcon }).bindPopup(GetData(car));
+                currentLayers.addLayer(layerx);
+
+                pointx.push([car.Lat, car.Lng]);
+                map.addLayer(currentLayers);
+
+            };
+
+            try {
+                map.fitBounds(new L.LatLngBounds(pointx));
+            } catch (x) { }
+        };
+
+        function CreateMarkers_N() {
+            var vecs = [];
+
+            ch = 0;
+            prelat = 0.00;
+            prelng = 0.00;
+
+            ch++;
+            var pointx = [];
+            try {
+                Markers_N[0].PathStatus = "Start";
+                Markers_N[Markers_N.length - 1].PathStatus = "FINISH";
+            } catch (x) { }
+
+            for (var i = 0; i < Markers_N.length; i++) {
+                var sizex = 0;
+                var shadowUrl = 'images/directions/shadex.png';
+                if ((i > 0) && (i < Markers_N.length - 1)) {
+                    sizex = 16;
+                }
+                else {
+                    sizex = 26;
+                    shadowUrl = "";
+                }
+                var car = Markers_N[i];
+                var xIcon = L.icon({
+                    iconUrl: GetImg(car),
+                    shadowUrl: shadowUrl,
+                    iconSize: [sizex, sizex],
+                    shadowSize: [sizex, sizex]
+                });
+                var layerx = L.marker([car.Lat, car.Lng], { icon: xIcon }).bindPopup(GetData(car));
+                currentLayers_N.addLayer(layerx);
+                pointx.push([car.Lat, car.Lng]);
+                map_N.addLayer(currentLayers_N);
+            };
+            try {
+                map_N.fitBounds(new L.LatLngBounds(pointx));
+            } catch (x) { }
+        };
+
+        function GetData(car) {
+            var SpeedFirstDigit = 0;
+            var SpeedSecondDigit = 0;
+            var SpeedThirdDigit = 0;
+            if (car.Speed != null) {
+                var S = car.Speed;
+                var Lenght = S.toString().length;
+                if (Lenght > 0) {
+                    SpeedFirstDigit = car.Speed.toString().substr(Lenght - 1, 1);
+                }
+                if (Lenght > 1) {
+                    SpeedSecondDigit = car.Speed.toString().substr(Lenght - 2, 1);
+                }
+                if (Lenght > 2) {
+                    SpeedThirdDigit = car.Speed.toString().substr(Lenght - 3, 1);
+                }
+            }
+            var needleRate = car.Speed / (200 - 0);
+            var needleAngle = ((200 - 2 * (-20)) * needleRate) - 90 + (-20);
+            return getHTML(car.DTSTamp, car.Status, car.EventStatus, car.Speed, car.Distance, car.Location, car.VehRegNo, SpeedFirstDigit, SpeedSecondDigit, SpeedThirdDigit, needleAngle, car.AnalogData, car.Odometers, car.FuelLevel, car.TerminalNo, car.Temprature);
+        }
+
+        function getHTML(DTSTamp, Status, EventStatus, Speed, Distance, location, VehRegNo, SpeedFirstDigit, SpeedSecondDigit, SpeedThirdDigit, needleAngle, temperature, odometer, fuelLevel, TerminalNumber, Temprature) {
+
+            return "<table id='vehDetPopup' style='color: black;'>" +
+                    "<tr style='border-bottom: 1px solid #1de6dd;'> <td style='border-bottom: 1px solid #1de6dd;color: black; font-weight: bold;'> Date Time: </td><td style='font-weight: bold; font-size: 9px; color: #20356c;'>" + DTSTamp + "</td>"
+                  + "<td rowSpan='6'> " +
+                    "<div style=' float:left; background-color:white' id=speeder>" +
+                     "<svg style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' xmlns='http://www.w3.org/2000/svg' version='1.1' width='120' height='100'><desc style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>Created with Raphaël</desc><defs style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'><radialGradient style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' id='r-77370d6e08b14b8caef5e8561cff0b3c' fx='0.14639422961605958' fy='0.14649899695873564'><stop style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' offset='0%' stop-color='#2233aa'></stop><stop style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' offset='100%' stop-color='#111955'></stop></radialGradient><linearGradient style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' id='r-d9d2750c92ac4051a50c3abf284416b7' x1='0' y1='1' x2='6.123031769111886e-17' y2='0'><stop style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' offset='0%' stop-color='#222222'></stop><stop style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' offset='50%' stop-color='#555555'></stop><stop style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' offset='100%' stop-color='#222222'></stop></linearGradient><linearGradient style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' id='r-0b27387b07cc483ebee018d7f89f279e' x1='0' y1='1' x2='6.123031769111886e-17' y2='0'><stop style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' offset='0%' stop-color='#222222'></stop><stop style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' offset='50%' stop-color='#555555'></stop><stop style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' offset='100%' stop-color='#222222'></stop></linearGradient><linearGradient style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' id='r-f65b705135b14b068292cb3cfc8f3440' x1='0' y1='1' x2='6.123031769111886e-17' y2='0'><stop style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' offset='0%' stop-color='#222222'></stop><stop style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' offset='50%' stop-color='#555555'></stop><stop style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' offset='100%' stop-color='#222222'></stop></linearGradient><linearGradient style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' id='r-583aca94daee4ee29de747ba92d37a32' x1='0' y1='1' x2='6.123031769111886e-17' y2='0'><stop style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' offset='0%' stop-color='#444444'></stop><stop style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' offset='50%' stop-color='#aaaaaa'></stop><stop style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' offset='100%' stop-color='#444444'></stop></linearGradient></defs><circle style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); opacity: 1; fill-opacity: 1; stroke-width: 0px;' cx='60' cy='50' r='38' fill='url(#r-77370d6e08b14b8caef5e8561cff0b3c)' stroke='#333333' opacity='1' fill-opacity='1' stroke-width='0'></circle><circle style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 1px;' cx='59.787836537769635' cy='49.78789939817524' r='38' fill='none' stroke='#ffffff' stroke-width='1'></circle><circle style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 1px;' cx='60.212163462230365' cy='50.21210060182476' r='38' fill='none' stroke='#333333' stroke-width='1'></circle><circle style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 1px;' cx='60' cy='50' r='38' fill='none' stroke='#cccccc' stroke-width='1'></circle><text style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-anchor: middle; font-style: normal; font-variant: normal; font-weight: normal; font-size: 7px; line-height: normal; font-family: Arial;' x='34.43974816721081' y='60.301263815142306' text-anchor='middle' font='10px &quot;Arial&quot;' stroke='none' fill='#ffffff' font-size='3px'><tspan style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>0 </tspan></text><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 1px; stroke-linecap: butt; opacity: 0.65;' fill='none' stroke='#ffdd33' d='M31.05677365992988,60.53231451426852L26.92202703991986,62.03693087344974' stroke-width='1' stroke-linecap='butt' opacity='0.65'></path><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0.6000000000000001px; stroke-linecap: butt;' fill='none' stroke='#ffffff' d='M28.113250157480763,54.480533950390246L26.528815382697204,54.70316917773883' stroke-width='0.6000000000000001' stroke-linecap='butt'></path><text style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-anchor: middle; font-style: normal; font-variant: normal; font-weight: normal; font-size: 7px; line-height: normal; font-family: Arial;' x='32.86623284669156' y='49.102980968363624' text-anchor='middle' font='10px &quot;Arial&quot;' stroke='none' fill='#ffffff' font-size='3px'><tspan style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>20 </tspan></text><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 1px; stroke-linecap: butt; opacity: 0.65;' fill='none' stroke='#ffdd33' d='M29.274998958753674,47.851905259209374L24.885713095718486,47.54503458195357' stroke-width='1' stroke-linecap='butt' opacity='0.65'></path><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0.6000000000000001px; stroke-linecap: butt;' fill='none' stroke='#ffffff' d='M29.04690586836022,41.126107749254146L27.508863923930917,40.68516900387547' stroke-width='0.6000000000000001' stroke-linecap='butt'></path><text style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-anchor: middle; font-style: normal; font-variant: normal; font-weight: normal; font-size: 7px; line-height: normal; font-family: Arial;' x='35.982648337298315' y='38.232589315070086' text-anchor='middle' font='10px &quot;Arial&quot;' stroke='none' fill='#ffffff' font-size='3px'><tspan style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>40 </tspan></text><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 1px; stroke-linecap: butt; opacity: 0.65;' fill='none' stroke='#ffdd33' d='M32.80388120547015,35.54278303013267L28.91872137768016,33.47746632015162' stroke-width='1' stroke-linecap='butt' opacity='0.65'></path><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0.6000000000000001px; stroke-linecap: butt;' fill='none' stroke='#ffffff' d='M35.330643233860215,29.305487762575478L34.10483668647439,28.277189017858735' stroke-width='0.6000000000000001' stroke-linecap='butt'></path><text style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-anchor: middle; font-style: normal; font-variant: normal; font-weight: normal; font-size: 7px; line-height: normal; font-family: Arial;' x='43.250338397636845' y='29.568974380811973' text-anchor='middle' font='10px &quot;Arial&quot;' stroke='none' fill='#ffffff' font-size='3px'><tspan style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>60 </tspan></text><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 1px; stroke-linecap: butt; opacity: 0.65;' fill='none' stroke='#ffdd33' d='M41.03347142085349,25.732515712245355L38.323967338118266,22.26573224256612' stroke-width='1' stroke-linecap='butt' opacity='0.65'></path><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0.6000000000000001px; stroke-linecap: butt;' fill='none' stroke='#ffffff' d='M45.878350866904555,21.06180679859669L45.17665401557062,19.623884155048707' stroke-width='0.6000000000000001' stroke-linecap='butt'></path><text style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-anchor: middle; font-style: normal; font-variant: normal; font-weight: normal; font-size: 7px; line-height: normal; font-family: Arial;' x='53.41312052466169' y='24.609603445928954' text-anchor='middle' font='10px &quot;Arial&quot;' stroke='none' fill='#ffffff' font-size='3px'><tspan style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>80 </tspan></text><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 1px; stroke-linecap: butt; opacity: 0.65;' fill='none' stroke='#ffdd33' d='M52.541327652925744,20.11675708998453L51.475803031915135,15.847722388553748' stroke-width='1' stroke-linecap='butt' opacity='0.65'></path><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0.6000000000000001px; stroke-linecap: butt;' fill='none' stroke='#ffffff' d='M58.86691225236048,17.819942322050615L58.81060975558336,16.22093324488543' stroke-width='0.6000000000000001' stroke-linecap='butt'></path><text style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-anchor: middle; font-style: normal; font-variant: normal; font-weight: normal; font-size: 6px; line-height: normal; font-family: Arial;' x='64.71441057895001' y='24.211675230062113' text-anchor='middle' font='10px &quot;Arial&quot;' stroke='none' fill='#ffffff' font-size='3px'><tspan style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>100 </tspan></text><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 1px; stroke-linecap: butt; opacity: 0.65;' fill='none' stroke='#ffdd33' d='M65.33837668498751,19.66616189188744L66.1010019257,15.332756447871354' stroke-width='1' stroke-linecap='butt' opacity='0.65'></path><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0.6000000000000001px; stroke-linecap: butt;' fill='none' stroke='#ffffff' d='M72.05132197355756,20.140233780391906L72.6501454256598,18.656518688734366' stroke-width='0.6000000000000001' stroke-linecap='butt'></path><text style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-anchor: middle; font-style: normal; font-variant: normal; font-weight: normal; font-size: 6px; line-height: normal; font-family: Arial;' x='75.2008392354239' y='28.443970398552715' text-anchor='middle' font='10px &quot;Arial&quot;' stroke='none' fill='#ffffff' font-size='3px'><tspan style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>120 </tspan></text><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 1px; stroke-linecap: butt; opacity: 0.65;' fill='none' stroke='#ffdd33' d='M77.21271501658295,24.458613159072584L79.67167430466623,20.809843610368667' stroke-width='1' stroke-linecap='butt' opacity='0.65'></path><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0.6000000000000001px; stroke-linecap: butt;' fill='none' stroke='#ffffff' d='M83.15272324556865,27.621630838818817L84.30316912112485,26.509662184847087' stroke-width='0.6000000000000001' stroke-linecap='butt'></path><text style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-anchor: middle; font-style: normal; font-variant: normal; font-weight: normal; font-size: 6px; line-height: normal; font-family: Arial;' x='83.05988173197436' y='36.57495596437768' text-anchor='middle' font='10px &quot;Arial&quot;' stroke='none' fill='#ffffff' font-size='3px'><tspan style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>140 </tspan></text><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 1px; stroke-linecap: butt; opacity: 0.65;' fill='none' stroke='#ffdd33' d='M86.11192490238273,33.66576056584438L89.8421998884374,31.33229778953643' stroke-width='1' stroke-linecap='butt' opacity='0.65'></path><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0.6000000000000001px; stroke-linecap: butt;' fill='none' stroke='#ffffff' d='M90.25229648178392,38.97101284894008L91.75551618274211,38.42298864267623' stroke-width='0.6000000000000001' stroke-linecap='butt'></path><text style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-anchor: middle; font-style: normal; font-variant: normal; font-weight: normal; font-size: 6px; line-height: normal; font-family: Arial;' x='86.9331433664479' y='47.19923906535669' text-anchor='middle' font='10px &quot;Arial&quot;' stroke='none' fill='#ffffff' font-size='8px'><tspan style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>160 </tspan></text><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 1px; stroke-linecap: butt; opacity: 0.65;' fill='none' stroke='#ffdd33' d='M90.49782410612482,45.696196473830234L94.85465612128553,45.081367398663126' stroke-width='1' stroke-linecap='butt' opacity='0.65'></path><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0.6000000000000001px; stroke-linecap: butt;' fill='none' stroke='#ffffff' d='M92.1229172995755,52.22669804073959L93.71908710328111,52.3373414216459' stroke-width='0.6000000000000001' stroke-linecap='butt'></path><text style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-anchor: middle; font-style: normal; font-variant: normal; font-weight: normal; font-size: 6px; line-height: normal; font-family: Arial;' x='86.1511509699906' y='58.48046170450921' text-anchor='middle' font='10px &quot;Arial&quot;' stroke='none' fill='#ffffff' font-size='3px'><tspan style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>180 </tspan></text><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 1px; stroke-linecap: butt; opacity: 0.65;' fill='none' stroke='#ffdd33' d='M89.61233271601877,58.4705224818664L93.84266596116431,59.68059712213303' stroke-width='1' stroke-linecap='butt' opacity='0.65'></path><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0.6000000000000001px; stroke-linecap: round; opacity: 0.65;' fill='none' stroke='#ffdd33' d='M31.13120836558373,60.734657403413365A30.8,30.8,10,1,1,88.84286596855652,60.804123412840305' stroke-width='0.6000000000000001' stroke-linecap='round' opacity='0.65'></path><rect style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);' x='42' y='64' width='36' height='10' r='1' rx='1' ry='1' fill='#000000' stroke='#000'></rect><rect style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); opacity: 1; fill-opacity: 1;' x='42' y='64' width='9' height='10' r='0' rx='0' ry='0' fill='url(#r-d9d2750c92ac4051a50c3abf284416b7)' stroke='#000' opacity='1' fill-opacity='1'></rect><text style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-anchor: middle; font-style: normal; font-variant: normal; font-weight: normal; font-size: 8px; line-height: normal; font-family: Arial;' x='46.5' y='72' text-anchor='middle' font='20px &quot;Arial&quot;' stroke='none' fill='#ffffff' font-size='8px'>" +
+                     "<tspan style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>0</tspan></text>" +
+                                                                                                    "<rect style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); opacity: 1; fill-opacity: 1;' x='51' y='64' width='9' height='10' r='0' rx='0' ry='0' fill='url(#r-0b27387b07cc483ebee018d7f89f279e)' stroke='#000' opacity='1' fill-opacity='1'></rect><text style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-anchor: middle; font-style: normal; font-variant: normal; font-weight: normal; font-size: 8px; line-height: normal; font-family: Arial;' x='55.5' y='72' text-anchor='middle' font='10px &quot;Arial&quot;' stroke='none' fill='#ffffff' font-size='8px'>" +
+                     "<tspan style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>" + SpeedThirdDigit + "</tspan></text>" +
+                                                                                                    "<rect style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); opacity: 1; fill-opacity: 1;' x='60' y='64' width='9' height='10' r='0' rx='0' ry='0' fill='url(#r-f65b705135b14b068292cb3cfc8f3440)' stroke='#000' opacity='1' fill-opacity='1'></rect><text style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-anchor: middle; font-style: normal; font-variant: normal; font-weight: normal; font-size: 8px; line-height: normal; font-family: Arial;' x='64.5' y='72' text-anchor='middle' font='10px &quot;Arial&quot;' stroke='none' fill='#ffffff' font-size='8px'>" +
+                     "<tspan style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>" + SpeedSecondDigit + "</tspan></text>" +
+                                                                                                    "<rect style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); opacity: 1; fill-opacity: 1;' x='69' y='64' width='9' height='10' r='0' rx='0' ry='0' fill='url(#r-583aca94daee4ee29de747ba92d37a32)' stroke='#000' opacity='1' fill-opacity='1'></rect><text style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-anchor: middle; font-style: normal; font-variant: normal; font-weight: normal; font-size: 8px; line-height: normal; font-family: Arial;' x='73.5' y='72' text-anchor='middle' font='10px &quot;Arial&quot;' stroke='none' fill='#ffffff' font-size='8px'>" +
+                     "<tspan style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>" + SpeedFirstDigit + "</tspan></text>" +
+                                                                                                    "<rect style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0px;' x='68.5' y='70.8' width='1.4000000000000001' height='3.2' r='0' rx='0' ry='0' fill='#000000' stroke='#000' stroke-width='0'></rect><circle style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0.8px;' cx='69.2' cy='71.6' r='0.8' fill='#ffffff' stroke='#000000' stroke-width='0.8'></circle><text style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); text-anchor: middle; font-style: normal; font-variant: normal; font-weight: normal; font-size: 6px; line-height: normal; font-family: Arial;' x='60' y='82' text-anchor='middle' font='10px &quot;Arial&quot;' stroke='none' fill='#ffffff' font-size='3px'><tspan style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0);'>Km/h</tspan></text><circle style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0px;' cx='60.212163462230365' cy='50.21210060182476' r='3.6' fill='#191919' stroke='#000' stroke-width='0'></circle><circle style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0px;' cx='59.787836537769635' cy='49.78789939817524' r='3.6' fill='#666666' stroke='#000' stroke-width='0'></circle><circle style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0px;' cx='60' cy='50' r='3.4' fill='#333333' stroke='#000' stroke-width='0'></circle><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); stroke-width: 0px;' fill='#ff6622' stroke='#000000' d='M60.4,20L61,50L60.7,57L59.3,57L59,50L59.6,20Z' stroke-width='0' cx='60' cy='50' " +
+                                                                                       "transform='rotate(" + needleAngle.toString() + " 60 50)'></path><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); opacity: 0.5;' fill='none' stroke='#ffffff' d='M60.4,20C60.4,20,61,50,61,50C61,50,60.7,57,60.7,57C60.7,57,59.804,57,59.4456,57' opacity='0.5' " +
+                                                                                       "transform='rotate(" + needleAngle.toString() + " 60 50)'></path><path style='-webkit-tap-highlight-color: rgba(0, 0, 0, 0); opacity: 0.5;' fill='none' stroke='#000000' d='M59.4456,57C59.355999999999995,57,59.3,57,59.3,57C59.3,57,59,50,59,50C59,50,59.6,20,59.6,20C59.6,20,60.4,20,60.4,20' opacity='0.5' " +
+                                                                                       "transform='rotate(" + needleAngle.toString() + " 60 50)'></path></svg>" +
+                    "</div></td></tr>" +
+                    "<tr  style='border-bottom: 1px solid #1de6dd;color: black; font-weight: bold;'> <td> Reg. No.:  </td><td style='color: black; font-weight: bold;color: #20356c'><b>" + VehRegNo + "</b></td></tr>" +
+                    "<tr  style='border-bottom: 1px solid #1de6dd;color: black; font-weight: bold;'> <td>Ignition:  </td><td style='color: #20356c'> " + Status + "&nbsp; &nbsp; &nbsp;" + "</td></tr>" +
+                    "<tr  style='border-bottom: 1px solid #1de6dd;color: black; font-weight: bold;'> <td>Speed:  </td><td style='color: #20356c'> " + Speed + "</td></tr>" +
+                    "<tr  style='border-bottom: 1px solid #1de6dd;color: black; font-weight: bold;'> <td>Temperature:  </td><td style='color: #20356c'> " + Temprature + "</td> </tr>" +
+                    "<tr  style='border-bottom: 1px solid #1de6dd;color: black; font-weight: bold;'> <td>Odometer:  </td><td style='color: #20356c'> " + odometer + "</td></tr>" +
+                    "<tr  style='border-bottom: 1px solid #1de6dd;color: black; font-weight: bold;'> <td>Fuel Level:  </td><td style='color: #20356c'> " + fuelLevel + "</td>" +
+                    "</tr>" +
+                    "<tr  style='color: black; font-weight: bold;'> <td  style='color: black; font-weight: bold;'>Location</td> <td colSpan='3' style='max-width:225px;color: #20356c'>" + location + "</td></tr></table> ";
+        };
+
+        function CreatePolyLines() {
+            var Scolor = "#008000";
+            var Greencolor = 'green';
+            var YellowColor = 'orange';
+            var RedColor = 'red';
+            for (var j = 0; j < pointerx.length - 1; j++) {
+                var pointA = pointerx[j];
+                var pointB = pointerx[j + 1];
+                if (speed[i] > 0 && speed[i] < 50) {
+                    Scolor = Greencolor;
+                }
+                else if (speed[i] > 50 && speed[i] < 100) {
+                    Scolor = YellowColor;
+                }
+                else if (speed[i] > 100) {
+                    Scolor = RedColor;
+                }
+                var pointList = [pointA, pointB];
+                new L.Polyline(pointList, {
+                    color: Scolor,
+                    weight: 3,
+                    opacity: 0.5,
+                    smoothFactor: 1
+                }).addTo(map);
+            }
+        }
+
+        function CreatePolyLines_N() {
+
+            var Scolor = "#008000";
+            var Greencolor = 'green';
+            var YellowColor = 'orange';
+            var RedColor = 'red';
+
+
+            for (var j = 0; j < pointerx_N.length - 1; j++) {
+                var pointA = pointerx_N[j];
+                var pointB = pointerx_N[j + 1];
+                if (speed[j] > 0 && speed[j] < 50) {
+                    Scolor = Greencolor;
+                }
+                else if (speed[j] > 50 && speed[j] < 100) {
+                    Scolor = YellowColor;
+                }
+                else if (speed[j] > 100) {
+                    Scolor = RedColor;
+                }
+                var pointList = [pointA, pointB];
+
+
+                new L.Polyline(pointList, {
+                    color: Scolor,
+                    weight: 3,
+                    opacity: 0.5,
+                    smoothFactor: 1
+                }).addTo(map_N);
+            }
+        }
+
+        function CreatePolyLine() {
+            var Scolor = "#008000";
+            var Greencolor = 'green';
+            var YellowColor = 'orange';
+            var RedColor = 'red';
+            for (var i = 0; i < pointerx.length; i++) {
+                var pointA = pointerx[i];
+                var pointB = pointerx[i + 1];
+                if (speed[i] > 0 && speed[i] < 50) {
+                    Scolor = Greencolor;
+                }
+                else if (speed[i] > 50 && speed[i] < 100) {
+                    Scolor = YellowColor;
+                }
+                else if (speed[i] > 100) {
+                    Scolor = RedColor;
+                }
+                var pointList = [pointA, pointB];
+                new L.Polyline(pointList, {
+                    color: 'red',
+                    weight: 3,
+                    opacity: 0.5,
+                    smoothFactor: 1
+                }).addTo(map);
+            }
+        }
+
+
+        function GetImg(car) {
+            var imgURL = "";
+            if (car.Status == null) {
+                imgURL = "images/directions/red_arrow/" + car.Direction + ".png";
+            }
+            else if (car.PathStatus.toString().toLocaleUpperCase().trim() == "START") {
+                debugger;
+                imgURL = "images/StartPoint.png";
+            }
+            else if (car.PathStatus.toString().toLocaleUpperCase().trim() == "FINISH") {
+                imgURL = "images/FinishPoint.png";
+            }
+            else if (car.Status.toString().toLocaleUpperCase() == "IGNITION OFF") {
+                imgURL = "images/directions/brown_arrow/" + car.Direction + ".png";
+            }
+            else if (car.Status.toString().toLocaleUpperCase() == "IGNITION ON" && car.Speed == 0) {
+                debugger;
+                imgURL = "images/directions/blue_arrow/" + car.Direction + ".png";
+            }
+            else if (car.Status.toString().toLocaleUpperCase() == "IGNITION ON" && car.Speed > 0) {
+                imgURL = "images/directions/green_arrow/" + car.Direction + ".png";
+            }
+            else {
+                imgURL = "images/directions/red_arrow/" + car.Direction + ".png";
+            }
+            return imgURL;
+        };
+
+        function clearpoly() {
+            for (i in map._layers) {
+                if (map._layers[i]._path != undefined) {
+                    try {
+                        map.removeLayer(map._layers[i]);
+                    }
+                    catch (e) {
+                        //console.log("problem with " + e + map._layers[i]);
+                    }
+                }
+            }
+        }
+
+
+
+
+        var replayIntervalToClearId = null;
+
+        var customizeTimeInterval = timeInterval * 1000;
+
+        function replay() {
+            $("#loader").removeClass('hide');
+            $("#map_canvas").addClass('hide');
+            var param = '{"nodeFormatedValue":"' + selNodeFromatedValue + '","DateFrom":"' + $('#StartDates').val() + '","DateTo":"' + $('#EndDates').val() + '","isReplay":"1","EventType":"' + eventType + '","isUseGoogleLocation":"' + IsUseGoogleLoc + '"}';
+            $.ajax(
+                {
+                    type: "POST",
+                    url: '@Url.Action("GetVehicleHistoryReplay", "History")',
+                    data: param,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    async: true,
+                    cache: false,
+                    success: function (msg) {
+                        timeInterval = $("#ReplayInterval").value() * 1000;
+                        var rawData, data;
+                        rawData = JSON.parse(JSON.stringify(msg));
+                        data = JSON.parse(rawData);
+                        pathArr = new Array();
+                        var prv = null;
+                        for (var i = 0; i < data["Vehicles"].length; i++) {
+                            MarkerObject = new Object();
+                            MarkerObject.Direction = data["Vehicles"][i].Direction;
+                            MarkerObject.Distance = data["Vehicles"][i].Distance;
+                            MarkerObject.DTSTamp = data["Vehicles"][i].DTSTamp;
+                            MarkerObject.EventStatus = data["Vehicles"][i].EventStatus;
+                            MarkerObject.GPSTime = data["Vehicles"][i].GPSTime;
+                            MarkerObject.Lat = parseFloat(data["Vehicles"][i].lat);
+                            MarkerObject.TerminalNo = selNodeFromatedValue.split("~")[3].toString().trim()
+                            MarkerObject.Lng = parseFloat(data["Vehicles"][i].lng);
+                            MarkerObject.Location = data["Vehicles"][i].Location;
+                            MarkerObject.Speed = data["Vehicles"][i].Speed;
+                            MarkerObject.Status = data["Vehicles"][i].Status;
+                            MarkerObject.Temprature = data["Vehicles"][i].Temprature;
+                            MarkerObject.VehRegNo = data["Vehicles"][i].VehRegNo;
+                            MarkerObject.PathStatus = data["Vehicles"][i].PathStatus;
+                            Markers.push(MarkerObject);
+                            Polylines.push([MarkerObject.Lng, MarkerObject.Lat]);
+                            pointerx.push(new L.LatLng(MarkerObject.Lat, MarkerObject.Lng));
+                        }
+
+
+                        window.setInterval(MovingMarkers, timeInterval);
+                        CreatePolyLine();
+
+                        for (i = 0; i < data["Vehicles"].length; i++) {
+                            AddLastPositionToRepeater(data["Vehicles"][i].VehRegNo, data["Vehicles"][i].EngNo, data["Vehicles"][i].ChaNo, data["Vehicles"][i].DTSTamp, data["Vehicles"][i].Speed, data["Vehicles"][i].Status, data["Vehicles"][i].Distance, data["Vehicles"][i].Location, data["Vehicles"][i].GpsTime, i)
+                        }
+                        arrangeSno("tblSVD");
+                        for (i = 0; i < data["ActiveAlarm"].length; i++) {
+                            AddAlarmToRepeater(data["ActiveAlarm"][i].Vehicle, data["ActiveAlarm"][i].EngNo, data["ActiveAlarm"][i].ChaNo, data["ActiveAlarm"][i].EventTime, data["ActiveAlarm"][i].Speed, data["ActiveAlarm"][i].EventStatus, data["ActiveAlarm"][i].Location, i)
+                        }
+                        arrangeSno("tblSVA");
+                        $("#loader").addClass('hide');
+                        $("#map_canvas").removeClass('hide');
+                    },
+                    error: function (x, e) {
+                        $('#loader').addClass('hide');
+                        toastr.error("The call to the server side failed. " + x.responseText);
+                    }
+                }
+            );
+        }
+
+
+
+        function MovingMarkers() {
+            CreateMarker(Markers[0]);
+            Markers.splice(0, 1);
+        }
+
+        function CreateMarker(mark) {
+            var sizex = 16
+            var car = mark;
+            var pointx = [];
+            var xIcon = L.icon({
+                iconUrl: GetImg(car),
+                shadowUrl: 'images/directions/shadex.png',
+                iconSize: [sizex, sizex],
+                shadowSize: [sizex, sizex]
+            });
+
+            map.removeLayer(currentLayers);
+            var layerx = L.marker([car.Lat, car.Lng], { icon: xIcon }).bindPopup(GetData(car));
+
+            currentLayers.addLayer(layerx);
+
+            pointx.push([car.Lat, car.Lng]);
+
+            map.addLayer(currentLayers);
+            map.fitBounds(new L.LatLngBounds(pointx));
+
+            //animateCircleReplay();
+        }
+
+
+        function animateCircleReplay() {
+            var count = 0;
+            offsetId = window.setInterval(function () {
+                count = (count + 1) % 200;
+                var icons = line.get('icons');
+                icons[0].offset = (count / 2) + '%';
+                line.set('icons', icons);
+
+            }, 20);
+        }
+
+
+        var currentLayers = null;
+        var currentLayers_N = null;
+        function ClearData() {
+            MarkerObject = {
+                ID: "",
+                DTSTamp: "",
+                Direction: "",
+                Distance: "",
+                EventStatus: "",
+                GPSTime: "",
+                Lat: 0.00,
+                Lng: 0.00,
+                Location: "",
+                PathStatus: "",
+                Speed: "",
+                Status: "",
+                VehRegNo: "",
+                TerminalNo: "",
+                HtmlData: "",
+                Layer: "",
+                Image: "",
+                OverLay: "",
+                PathStatus: "",
+                LtLn: []
+            };
+
+            map.removeLayer(currentLayers);
+            currentLayers = new L.FeatureGroup();
+            clearpoly();
+            pointerx = [];
+            Markers.length = 0;
+            Polylines.length = 0;
+            Layers.length = 0;
+            $('#tblSVD > tbody').html("");
+
+        }
+
+        function AddLastPositionToRepeater(Vehicle, Engine, Chasis, Time, Speed, Status, Distance, Location, GpsTime, index) {
+
+            var tableToUpdate = $('#tblSVD');
+            var ID = Vehicle;
+            var rowClass = "";
+
+            if (Status == null || Status.toString().toLocaleUpperCase() == "IGNITION OFF") {
+                rowClass = "ignOff";
+            }
+            else if (Status.toString().toLocaleUpperCase() == "IGNITION ON" && Speed > 0) {
+                rowClass = "ignOn";
+            }
+            else {
+                rowClass = "idle";
+            }
+            var rowData = "<tr id='P" + index.toString() + "'  class='" + rowClass + "' > </tr>"
+            var rowToAdd = $(rowData.toString());
+
+            var _cell0 = "<td>" + index + "</td>";
+            var _cell4 = "<td>" + Time + "</td>";
+            var _cell10 = "<td>" + GpsTime + "</td>";
+            var _cell5 = "<td>" + Speed + "</td>";
+            var _cell6 = "<td style='width:80px;'>" + Status + "</td>";
+            //var _cell7 = "<td style='display:none;'>" + Distance + "</td>";
+            var _cell8;
+            //var _cell8 = "<td>" + Location + "</td>";
+            if (IsUseGoogleLoc == '1') {
+                _cell8 = "<td onclick='DisplayCellLocation(this," + index + ")'>" + Location + "</td>";
+            }
+            else {
+                _cell8 = "<td>" + Location + "</td>";
+            }
+            //var _cell9 = "<td style='display:none;'>" + index + "</td>";
+
+            rowToAdd.append(_cell0);
+            rowToAdd.append(_cell4);
+            rowToAdd.append(_cell10);
+            rowToAdd.append(_cell5);
+            rowToAdd.append(_cell6);
+            //rowToAdd.append(_cell7);
+            rowToAdd.append(_cell8);
+            //rowToAdd.append(_cell9);
+            tableToUpdate.append(rowToAdd);
+
+
+
+        }
+
+        function AddAlarmToRepeater(Vehicle, Engine, Chasis, Time, Speed, Status, Location, index) {
+            var tableToUpdate = $('#tblSVA');
+            var ID = Vehicle;
+            var rowClass = "grdAlarm";
+            if (Location == null) {
+                Location = '';
+            }
+
+            var rowData = "<tr id='A" + index.toString() + "'  class='" + rowClass + "' > </tr>"
+            var rowToAdd = $(rowData.toString());
+            var _cell0 = "<td>" + "0" + "</td>";
+            var _cell4 = "<td>" + Time + "</td>";
+            var _cell5 = "<td>" + Speed + "</td>";
+            var _cell6 = "<td>" + Status + "</td>";
+            var _cell8; // = "<td>" + Location + "</td>";
+            if (IsUseGoogleLoc == '1') {
+                _cell8 = "<td onclick='DisplayAlarmCellLocation(this," + index + ")'>" + Location + "</td>";
+            }
+            else {
+                _cell8 = "<td>" + Location + "</td>";
+            }
+
+            rowToAdd.append(_cell0);
+            rowToAdd.append(_cell4);
+            rowToAdd.append(_cell5);
+            rowToAdd.append(_cell6);
+            rowToAdd.append(_cell8);
+            tableToUpdate.append(rowToAdd);
+        }
+
+    </script>
+
+
+
+
+    @*<script src="~/Scripts/jquery.signalR-2.4.1.min.js"></script>
+    <script src="~/signalr/hubs" type="text/javascript"></script>*@
+
+    <style type="text/css">
+        /*Added css for design notification area, you can design by your self*/
+        /* COPY css content from youtube video description*/
+        .noti-content {
+            position: fixed;
+            right: 100px;
+            background: #e5e5e5;
+            border-radius: 4px;
+            top: 47px;
+            width: 250px;
+            display: none;
+            border: 1px solid #9E988B;
+        }
+
+        ul#notiContent {
+            max-height: 200px;
+            overflow: auto;
+            padding: 0px;
+            margin: 0px;
+            padding-left: 20px;
+        }
+
+            ul#notiContent li {
+                margin: 3px;
+                padding: 6px;
+                background: #fff;
+            }
+
+        .noti-top-arrow {
+            border-color: transparent;
+            border-bottom-color: #F5DEB3;
+            border-style: dashed dashed solid;
+            border-width: 0 8.5px 8.5px;
+            position: absolute;
+            right: 32px;
+            top: -8px;
+        }
+
+        span.noti {
+            color: #FF2323;
+            margin: 15px;
+            position: fixed;
+            right: 100px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        span.count {
+            position: relative;
+            top: -3px;
+        }
+    </style>
+
+    @* Add jquery code for Get Notification & setup signalr *@
+    @*<script type="text/javascript">
+        $(function () {
+            // Click on notification icon for show notification
+            $('span.noti').click(function (e) {
+                e.stopPropagation();
+                $('.noti-content').show();
+                var count = 0;
+                count = parseInt($('span.count').html()) || 0;
+                //only load notification if not already loaded
+                if (count >= 0) {
+                    updateNotification();
+                }
+                $('span.count', this).html('&nbsp;');
+            })
+            // hide notifications
+            $('html').click(function () {
+                $('.noti-content').hide();
+            })
+            // update notification
+            function updateNotification() {
+                $('#notiContent').empty();
+                $('#notiContent').append($('<li>Loading...</li>'));
+                $.ajax({
+                    type: 'GET',
+                    url: '/Notificationcr/GetNotificationContacts',
+                    success: function (response) {
+                        $('#notiContent').empty();
+                        if (response.length == 0) {
+                            $('#notiContent').append($('<li>No data available</li>'));
+                        }
+                        $.each(response, function (index, value) {
+                            $('#notiContent').append($('<li>Msg : ' + value.MessageSend + '</li>'));
+                        });
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                })
+            }
+            // update notification count
+            function updateNotificationCount() {
+                var count = 0;
+                count = parseInt($('span.count').html()) || 0;
+                count++;
+                $('span.count').html(count);
+            }
+            // signalr js code for start hub and send receive notification
+            var notificationHub = $.connection.notificationHub;
+            $.connection.hub.start().done(function () {
+                console.log('Notification hub started');
+            });
+            //signalr method for push server message to client
+            notificationHub.client.notify = function (message) {
+                if (message && message.toLowerCase() == "added") {
+                    updateNotificationCount();
+                }
+            }
+        })
+    </script>*@
+
+
+</body>
+</html>

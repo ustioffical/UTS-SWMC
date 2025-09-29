@@ -1,0 +1,599 @@
+{% extends "master.html" %}
+{% load static %}
+{% load urlify %}
+{% load humanize %}
+
+{% block title %}Vehicle Data Management{% endblock %}
+
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/jquery.dataTables.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/sweetalert2.css" %}">
+    <!-- Add Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3>Vehicle Data Management System</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="index">
+                                <svg class="stroke-icon">
+                                    <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                                </svg>
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item">Vehicle</li>
+                        <li class="breadcrumb-item active">Data Management</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+
+    <!-- Container-fluid starts-->
+    <div class="container-fluid">
+
+        <!-- Filter Section -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <form method="post" class="row g-3 mb-3">
+                            {% csrf_token %}
+                            <div class="col-xl-2 col-md-6">
+                                <label class="form-label">Vehicle Type</label>
+                                <select name="vehicle_type" class="form-select" data-live-search="true">
+                                    <option value="">Choose One</option>
+                                    {% for vt in vehicle_type_list %}
+                                        <option value="{{ vt }}">{{ vt }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-xl-2 col-md-6">
+                                <label class="form-label">Vehicle Code</label>
+                                <select name="vehicle_code" class="form-select" data-live-search="true">
+                                    <option value="">Choose One</option>
+                                    {% for vc in vehicle_code_list %}
+                                        <option value="{{ vc }}">{{ vc }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-xl-2 col-md-6">
+                                <label class="form-label">PITB Code</label>
+                                <select name="pitb_code" class="form-select" data-live-search="true">
+                                    <option value="">Choose One</option>
+                                    {% for pc in pitb_code_list %}
+                                        <option value="{{ pc }}">{{ pc }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-xl-2 col-md-6">
+                                <label class="form-label">Owner</label>
+                                <select name="owner_code" class="form-select" data-live-search="true">
+                                    <option value="">Choose One</option>
+                                    {% for owner in owner_code_list %}
+                                        <option value="{{ owner }}">{{ owner }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-xl-2 col-md-6">
+                                <label class="form-label">Ownership Status</label>
+                                <select name="ownership_type" class="form-select">
+                                    <option value="">Choose One</option>
+                                    {% for status in ownership_status_list %}
+                                        <option value="{{ status }}">{{ status }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-xl-2 col-md-6">
+                                <label class="form-label">Search</label>
+                                <input type="text" name="search" class="form-control" placeholder="Search All">
+                            </div>
+                            <div class="col-12 d-flex justify-content-start align-items-end">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="fa fa-search"></i> Filter/Search
+                                </button>
+                                <button type="reset" class="btn btn-outline-secondary">
+                                    <i class="fa fa-refresh"></i> Reset
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row user-list-wrapper">
+            <div class="col-12">
+
+                <div class="card">
+                    <style>
+                        .user-list-wrapper .user-list-table div.dt-container .dt-layout-row .dt-search {
+                            right: 20px;
+                        }
+                        /* Custom Select2 styling */
+                        .select2-container--bootstrap-5 .select2-selection {
+                            min-height: calc(1.5em + 0.75rem + 2px);
+                            padding: 0.375rem 0.75rem;
+                            font-size: 1rem;
+                            border-radius: 0.25rem;
+                        }
+                        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+                            padding-left: 0;
+                            padding-right: 0;
+                            height: auto;
+                            margin-top: 0;
+                        }
+                        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
+                            height: calc(1.5em + 0.75rem);
+                            right: 0.75rem;
+                        }
+                        /* Vehicle icon styles */
+                        .vehicle-icon {
+                            width: 20px;
+                            height: 20px;
+                            margin-right: 8px;
+                        }
+                        /* Badge styles for better visibility */
+                        .badge.bg-light-success {
+                            background-color: #d4edda !important;
+                            color: #155724 !important;
+                        }
+                        .badge.bg-light-warning {
+                            background-color: #fff3cd !important;
+                            color: #856404 !important;
+                        }
+                        .badge.bg-light-secondary {
+                            background-color: #e2e3e5 !important;
+                            color: #383d41 !important;
+                        }
+                        .badge.bg-light-info {
+                            background-color: #d1ecf1 !important;
+                            color: #0c5460 !important;
+                        }
+                    </style>
+                    <div class="card-header card-no-border text-end pb-5"></div>
+                    <div class="card-body pt-0 px-0">
+                        <div class="list-product user-list-table recent-table task-table">
+                            <div class="table-responsive custom-scrollbar">
+                                <table class="table" id="container-list">
+                                    <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th><span class="c-o-light f-w-600">Vehicle Info</span></th>
+                                        <th><span class="c-o-light f-w-600">Vehicle Details</span></th>
+                                        <th><span class="c-o-light f-w-600">Owner Info</span></th>
+                                        <th><span class="c-o-light f-w-600">Status</span></th>
+                                        <th><span class="c-o-light f-w-600">Actions</span></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for v in vehicle_data %}
+                                        <tr class="product-removes inbox-data">
+                                            <td>{{ forloop.counter }}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="flex-shrink-0">
+                                                        {% if v.vehicle_type == "Car" %}
+                                                            <i class="fa fa-car vehicle-icon text-primary"></i>
+                                                        {% elif v.vehicle_type == "Truck" %}
+                                                            <i class="fa fa-truck vehicle-icon text-success"></i>
+                                                        {% elif v.vehicle_type == "Tractor Trolly" %}
+                                                            <i class="fa fa-tractor vehicle-icon text-warning"></i>
+                                                        {% elif v.vehicle_type == "Tractor Loader" %}
+                                                            <i class="fa fa-tractor vehicle-icon text-info"></i>
+                                                        {% elif v.vehicle_type == "Loader Rickshaw" %}
+                                                            <i class="fa fa-truck-pickup vehicle-icon text-secondary"></i>
+                                                        {% elif v.vehicle_type == "Chain Arm Roller" %}
+                                                            <i class="fa fa-cogs vehicle-icon text-danger"></i>
+                                                        {% elif v.vehicle_type == "Compactor 7m3" %}
+                                                            <i class="fa fa-compress vehicle-icon text-dark"></i>
+                                                        {% elif v.vehicle_type == "Dumper 10m3" %}
+                                                            <i class="fa fa-dumpster vehicle-icon text-primary"></i>
+                                                        {% else %}
+                                                            <i class="fa fa-question-circle vehicle-icon text-muted"></i>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="flex-grow-1 ms-3">
+                                                        <strong>{{ v.vehicle_code|default:"-" }}</strong>
+                                                        {% if v.pitb_code %}
+                                                            <br><small class="text-primary">PITB: {{ v.pitb_code }}</small>
+                                                        {% endif %}
+                                                        <br><small class="text-muted">{{ v.register_no|default:"-" }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <p class="mb-1">
+                                                    <strong>{{ v.vehicle_type|default:"-" }}</strong>
+                                                </p>
+                                                <small class="text-muted">
+                                                    {{ v.make|default:"-" }} {{ v.model|default:"" }}
+                                                    {% if v.color %}<br>Color: {{ v.color }}{% endif %}
+                                                </small>
+                                                {% if v.vehicle_use_code.vehicle_use_name %}
+                                                    <br><small class="badge bg-light-info">{{ v.vehicle_use_code.vehicle_use_name }}</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if v.owner.name %}
+                                                    <p class="mb-1">
+                                                        <strong>{{ v.owner.name }}</strong>
+                                                    </p>
+                                                    <small class="text-muted">{{ v.owner.owner_code }}</small>
+                                                    <br><small class="text-muted">{{ v.ownership_status|default:"Not Assigned" }}</small>
+                                                {% else %}
+                                                    <span class="text-muted">Not Assigned</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="mb-1">
+                                                    {% if v.status == "Active" %}
+                                                        <span class="badge bg-success">Active</span>
+                                                    {% elif v.status == "Blocked" %}
+                                                        <span class="badge bg-danger">Blocked</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">{{ v.status|default:"Unknown" }}</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    {% if v.vtms_status == "Working" %}
+                                                        <span class="badge bg-light-success">VTMS: Working</span>
+                                                    {% elif v.vtms_status == "Stop" %}
+                                                        <span class="badge bg-light-warning">VTMS: Stop</span>
+                                                    {% elif v.vtms_status %}
+                                                        <span class="badge bg-light-secondary">VTMS: {{ v.vtms_status }}</span>
+                                                    {% else %}
+                                                        <span class="badge bg-light-secondary">VTMS: Not Set</span>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="common-align gap-2 justify-content-start">
+                                                    <a class="square-white" href="javaScript:void(0)"
+                                                       title="Edit Vehicle Data"
+                                                       onclick="Cred_VehicleData_ShowModel('UPDATE,{{ v.id }},{{ v.vehicle_code|default:''|escapejs }},{{ v.vendor_code|default:''|escapejs }},{{ v.register_no|default:''|escapejs }},{{ v.make|default:''|escapejs }},{{ v.engine_no|default:''|escapejs }},{{ v.chasis_no|default:''|escapejs }},{{ v.color|default:''|escapejs }},{{ v.model|default:''|escapejs }},{{ v.cc|default:0 }},{{ v.fuel_type|default:''|escapejs }},{{ v.total_mileage|default:0 }},{{ v.vehicle_type|default:''|escapejs }},{{ v.vehicle_use_code.vehicle_use_code|default:''|escapejs }},{{ v.status|default:''|escapejs }},{{ v.pitb_code|default:''|escapejs }},{{ v.owner.owner_code|default:''|escapejs }},{{ v.ownership_status|default:''|escapejs }},{{ v.vtms_status|default:''|escapejs }}');">
+
+                                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                                          <path d="M12.146 1.854a.5.5 0 01.708 0l1.292 1.292a.5.5 0 010 .708l-9.5 9.5a.5.5 0 01-.168.11l-4 1.5a.5.5 0 01-.65-.65l1.5-4a.5.5 0 01.11-.168l9.5-9.5zM11.207 3L3 11.207V13h1.793L13 4.793 11.207 3z"/>
+                                                        </svg>
+                                                    </a>
+                                                    <a class="square-white" href="javaScript:void(0)"
+                                                       title="View Vehicle Details"
+                                                       onclick="showVehicleInfo('{{ v.register_no }}');">
+                                                        <svg>
+                                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#eye"></use>
+                                                        </svg>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Hidden data for JavaScript -->
+    <script type="application/json" id="owner-data">
+    {
+        "self_owners": [
+            {% for owner in self_owners %}
+            {
+                "owner_code": "{{ owner.owner_code }}",
+                "name": "{{ owner.name|default:'' }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ],
+        "vendor_owners": [
+            {% for owner in vendor_owners %}
+            {
+                "owner_code": "{{ owner.owner_code }}",
+                "name": "{{ owner.name|default:'' }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+    }
+    </script>
+
+{% endblock %}
+
+{% block PluginsJS %}
+    <script src="{% static "assets/js/datatable/datatables/jquery.dataTables.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.select.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/select.bootstrap5.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/datatable.custom.js" %}"></script>
+    <script src="{% static "assets/js/sweet-alert/sweetalert.min.js" %}"></script>
+    <script src="{% static "assets/js/trash_popup.js" %}"></script>
+    <script src="{% static "assets/js/common-check.js" %}"></script>
+    <!-- Add Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+{% endblock %}
+
+{% block CustomerJS %}
+    <script>
+
+        $(document).ready(function () {
+
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'error' %}
+                        UtilityModelJS.ToastSweetAlert("top-center", "error", "{{ message }}");
+                    {% else %}
+                        UtilityModelJS.ToastSweetAlert("top-center", "success", "{{ message }}");
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
+            // Initialize tooltips
+            $('[title]').tooltip();
+
+        });
+
+        // Get owner data from JSON
+        const ownerData = JSON.parse(document.getElementById('owner-data').textContent);
+
+        function Cred_VehicleData_ShowModel(params) {
+
+            var split = params.split(",");
+
+            let action_type = split[0];
+            let unique_id = "";
+            let set_vehicle_code = "";
+            let set_vendor_code = "";
+            let set_register_no = "";
+            let set_make = "";
+            let set_engine_no = "";
+            let set_chasis_no = "";
+            let set_color = "";
+            let set_model = "";
+            let set_cc = "";
+            let set_fuel_type = "";
+            let set_total_mileage = "";
+            let set_vehicle_type = "";
+            let set_vehicle_use_code = "";
+            let set_status = "";
+            let set_pitb_code = "";
+            let set_owner_code = "";
+            let set_ownership_status = "";
+            let set_vtms_status = "";
+
+            if (action_type === "UPDATE") {
+                unique_id = split[1];
+                set_vehicle_code = split[2];
+                set_vendor_code = split[3];
+                set_register_no = split[4];
+                set_make = split[5];
+                set_engine_no = split[6];
+                set_chasis_no = split[7];
+                set_color = split[8];
+                set_model = split[9];
+                set_cc = split[10];
+                set_fuel_type = split[11];
+                set_total_mileage = split[12];
+                set_vehicle_type = split[13];
+                set_vehicle_use_code = split[14];
+                set_status = split[15];
+                set_pitb_code = split[16];
+                set_owner_code = split[17];
+                set_ownership_status = split[18];
+                set_vtms_status = split[19];
+            }
+
+            $("#effect-modal-header").empty();
+            $("#effect-modal-header").append('<h6 class="modal-title text-capitalize" id="set_title">Vehicle Data Manager</h6>' +
+                '<button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button">' +
+                '<span aria-hidden="true">×</span></button>');
+
+            $("#effect-modal-body").html("");
+            var container_body = $("#effect-modal-body");
+
+            // Function to update owner dropdown based on ownership status
+            function updateOwnerDropdown(ownershipStatus) {
+                let ownerOptions = '<option value="">-- Select Owner --</option>';
+                let owners = [];
+
+                if (ownershipStatus === 'Owner') {
+                    owners = ownerData.self_owners;
+                } else if (ownershipStatus === 'Rented') {
+                    owners = ownerData.vendor_owners;
+                }
+
+                owners.forEach(function(owner) {
+                    const displayText = owner.name ? `${owner.owner_code} - ${owner.name}` : owner.owner_code;
+                    ownerOptions += `<option value="${owner.owner_code}">${displayText}</option>`;
+                });
+
+                return ownerOptions;
+            }
+
+            // Build owner options based on ownership status
+            var ownerOptions = updateOwnerDropdown(set_ownership_status);
+
+            // Build vehicle used for options
+            var vehicleUsedForOptions = '<option value="">-- Select Vehicle Use --</option>';
+            {% for vuf in vehicle_used_for_list %}
+                vehicleUsedForOptions += '<option value="{{ vuf.vehicle_use_code }}">{{ vuf.vehicle_use_name }}</option>';
+            {% endfor %}
+
+            container_body.append('<form id="vehicleDataForm" method="post" action="">' +
+                '{% csrf_token %}' +
+                '<input type="hidden" name="update_owner" value="true">' +
+                '<div class="row g-3 p-3 mb-3">' +
+                "<input type='hidden' id='vehicle_id' name='vehicle_id' value='" + unique_id + "' autocomplete='off'>" +
+
+                '<div class="col-md-6">' +
+                '<label for="vehicle_code" class="form-label">Vehicle Code</label>' +
+                "<input type='text' name='vehicle_code' id='vehicle_code' value='" + set_vehicle_code + "' class='form-control' readonly></div>" +
+
+                '<div class="col-md-6">' +
+                '<label for="pitb_code_number" class="form-label">PITB Code</label>' +
+                '<div class="input-group">' +
+                '<span class="input-group-text">SW-</span>' +
+                "<input type='text' name='pitb_code_number' id='pitb_code_number' class='form-control' placeholder='Enter number'>" +
+                '</div>' +
+                "<input type='hidden' id='pitb_code' name='pitb_code'></div>" +
+
+                '<div class="col-md-6">' +
+                '<label for="register_no" class="form-label">Register No</label>' +
+                "<input type='text' name='register_no' id='register_no' value='" + set_register_no + "' class='form-control' readonly></div>" +
+
+                '<div class="col-md-6">' +
+                '<label for="chasis_no" class="form-label">Chasis No</label>' +
+                "<input type='text' name='chasis_no' id='chasis_no' value='" + set_chasis_no + "' class='form-control'></div>" +
+
+                '<div class="col-md-6">' +
+                '<label for="vehicle_type" class="form-label">Vehicle Type</label>' +
+                "<input type='text' name='vehicle_type' id='vehicle_type' value='" + set_vehicle_type + "' class='form-control' readonly></div>" +
+
+                '<div class="col-md-6">' +
+                '<label for="vehicle_use_code" class="form-label">Vehicle Used For</label>' +
+                '<select name="vehicle_use_code" id="vehicle_use_code" class="form-select">' +
+                vehicleUsedForOptions +
+                '</select></div>' +
+
+                '<div class="col-md-6">' +
+                '<label for="ownership_status" class="form-label">Ownership Status</label>' +
+                '<select name="ownership_status" id="ownership_status" class="form-select">' +
+                '<option value="Owner">Owner</option>' +
+                '<option value="Rented">Rented</option>' +
+                '</select></div>' +
+
+                '<div class="col-md-6">' +
+                '<label for="owner_code" class="form-label">Owner</label>' +
+                '<select name="owner_code" id="owner_code" class="form-select">' +
+                ownerOptions +
+                '</select></div>' +
+
+                '<div class="col-md-6">' +
+                '<label for="status" class="form-label">Status</label>' +
+                "<input type='text' name='status' id='status' value='" + set_status + "' class='form-control' readonly></div>" +
+
+                '<div class="col-md-6">' +
+                '<label for="vtms_status" class="form-label">VTMS Status</label>' +
+                '<select name="vtms_status" id="vtms_status" class="form-select">' +
+                '<option value="">Not Set</option>' +
+                '<option value="Working">Working</option>' +
+                '<option value="Stop">Stop</option>' +
+                '</select></div>' +
+
+                '</div>' +
+                '</form>'
+            );
+
+            // Set values after DOM is created
+            setTimeout(function() {
+                // Handle PITB code
+                if (set_pitb_code && set_pitb_code.startsWith('SW-')) {
+                    const pitbNumber = set_pitb_code.substring(3);
+                    $('#pitb_code_number').val(pitbNumber);
+                }
+                $('#pitb_code').val(set_pitb_code);
+
+                // Set other values
+                $('#vehicle_use_code').val(set_vehicle_use_code);
+                $('#ownership_status').val(set_ownership_status);
+                $('#owner_code').val(set_owner_code);
+                $('#vtms_status').val(set_vtms_status);
+
+                // Handle ownership status change
+                $('#ownership_status').on('change', function() {
+                    const selectedOwnership = $(this).val();
+                    const ownerSelect = $('#owner_code');
+                    ownerSelect.empty();
+
+                    let owners = [];
+                    if (selectedOwnership === 'Owner') {
+                        owners = ownerData.self_owners;
+                    } else if (selectedOwnership === 'Rented') {
+                        owners = ownerData.vendor_owners;
+                    }
+
+                    ownerSelect.append('<option value="">-- Select Owner --</option>');
+                    owners.forEach(function(owner) {
+                        const displayText = owner.name ? `${owner.owner_code} - ${owner.name}` : owner.owner_code;
+                        ownerSelect.append(`<option value="${owner.owner_code}">${displayText}</option>`);
+                    });
+                });
+
+                // Handle PITB code number input
+                $('#pitb_code_number').on('input', function() {
+                    const pitbCodeNumber = $(this).val();
+                    const fullPitbCode = pitbCodeNumber ? `SW-${pitbCodeNumber}` : '';
+                    $('#pitb_code').val(fullPitbCode);
+                });
+
+            }, 100);
+
+            $("#effect-modal-footer").html("");
+            var container_footer = $("#effect-modal-footer");
+            container_footer.append('<button class="btn btn-sm w-50 btn-success" type="button" id="submitBtn">Save Changes</button>' +
+                '<button class="btn btn-sm w-25 btn-danger" data-bs-dismiss="modal" type="button">Close</button>');
+
+            $('#effectModal').modal('show');
+
+            // Form validation and submission
+            $("#submitBtn").click(function () {
+                let Status = 0;
+
+                // Update PITB code before submission
+                const pitbCodeNumber = $('#pitb_code_number').val();
+                const fullPitbCode = pitbCodeNumber ? `SW-${pitbCodeNumber}` : '';
+                $('#pitb_code').val(fullPitbCode);
+
+                if (Status === 0) {
+                    $.ajax({
+                        url: window.location.href,
+                        type: 'POST',
+                        data: $("#vehicleDataForm").serialize(),
+                        dataType: 'json',
+                        beforeSend: function() {
+                            $('#submitBtn').prop('disabled', true);
+                        },
+                        success: function(response) {
+                            $('#submitBtn').prop('disabled', false);
+
+                            if (response.success) {
+                                $('#effectModal').modal('hide');
+                                UtilityModelJS.ToastSweetAlert("top-center", "success", response.message);
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 1500);
+                            } else {
+                                UtilityModelJS.ToastSweetAlert("top-center", "error", response.message);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            $('#submitBtn').prop('disabled', false);
+                            UtilityModelJS.ToastSweetAlert("top-center", "error", "An unexpected error occurred. Please try again.");
+                        }
+                    });
+                }
+            });
+        }
+
+        function showVehicleInfo(registerNo) {
+            var url = "{% url 'single_vehicle_info' 'VEHICLE_ID_PLACEHOLDER' %}".replace('VEHICLE_ID_PLACEHOLDER', registerNo);
+            window.location.href = url;
+        }
+
+    </script>
+{% endblock %}
