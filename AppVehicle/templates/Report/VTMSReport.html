@@ -1,0 +1,589 @@
+{% extends "master.html" %}
+{% load static %}
+{% load urlify %}
+{% load humanize %}
+
+{% block title %}VTMS Report{% endblock %}
+
+<!-- Custom Plugins CSS -->
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/jquery.dataTables.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/sweetalert2.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select/bootstrap-select.min.css" %}">
+{% endblock %}
+<!--End Custom Plugins CSS -->
+
+<!-- Header Page Hierarchy-->
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    {#        <h3>{{breadcrumb.title}} </h3>#}
+                    <h3>VEHICLE VTMS SYSTEM</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/index">
+                            <svg class="stroke-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                            </svg>
+                        </a></li>
+                        {#          <li class="breadcrumb-item">{{breadcrumb.parent}}</li>#}
+                        <li class="breadcrumb-item">Vehicle</li>
+                        <li class="breadcrumb-item active">VTMS Report</li>
+                        {#          <li class="breadcrumb-item active">{{breadcrumb.child}}</li>#}
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+<!-- Header Page Hierarchy-->
+
+{% block content %}
+
+    <!-- Container-fluid starts-->
+    <div class="container-fluid main-companies">
+
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-6 col-lg-12 col-xl-6 box-col-12">
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="header-top">
+                            <h5>VTMS Filter</h5>
+                        </div>
+                    </div>
+                    <div class="card-body main-session-devices">
+
+                        <form class="form form-horizontal" action=""
+                              method="post" accept-charset='utf-8'
+                              enctype="multipart/form-data">
+
+                            {% csrf_token %}
+
+                            <div class="row mb-3">
+                                <label class="col-md-4 form-label pt-1 fw-bolder">
+                                    Vehicle Type:
+                                </label>
+                                <div class="col-md-8">
+                                    <select id="cmd_vehicle_type"
+                                            name="cmd_vehicle_type" class="selectpicker"
+                                            data-live-search="true">
+                                        <option value="NA">
+                                            Choose One
+                                        </option>
+                                        {% for type in vehicle_type_list %}
+                                            <option value="{{ type.vehicle_type }}"
+                                                    {% if selected_vehicle_type == type.vehicle_type %}selected{% endif %}>
+                                                {{ type.vehicle_type }} -
+                                                ({{ type.count }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <label class="col-md-4 form-label fw-bolder pt-1">
+                                    Vehicle ID:
+                                </label>
+                                <div class="col-md-8">
+                                    <select id="cmd_vehicle_list"
+                                            name="cmd_vehicle_list" class="selectpicker"
+                                            data-live-search="true" data-size="10">
+                                        <option value="NA">
+                                            Choose One
+                                        </option>
+                                        {% for vehicle in vehicle_codes %}
+                                            <option value="{{ vehicle.veh_code }}"
+                                                    {% if selected_vehicle_code == vehicle.veh_code %}selected{% endif %}>
+                                                {% if vehicle.register_no == "APL-4" %}
+                                                    {{ vehicle.chasis_no }}
+                                                {% else %}
+                                                    {{ vehicle.register_no }}
+                                                {% endif %}
+                                                ({{ vehicle.pitb_code }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <label class="col-md-4 form-label fw-bolder pt-1">
+                                    Statis
+                                </label>
+                                <div class="col-md-8">
+                                    <select id="status_filter"
+                                            name="status_filter" class="selectpicker"
+                                            data-live-search="true" data-size="10">
+                                        <option value="NA">Choose One</option>
+                                        <option value="Working"
+                                                {% if selected_status == "Working" %}selected{% endif %}>Working
+                                            ({{ working_count }})
+                                        </option>
+                                        <option value="Delay" {% if selected_status == "Delay" %}selected{% endif %}>
+                                            Delay ({{ delay_count }})
+                                        </option>
+                                        <option value="Offline"
+                                                {% if selected_status == "Offline" %}selected{% endif %}>Offline
+                                            ({{ no_response_count }})
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <label class="col-md-4 form-label fw-bolder pt-1">
+                                    Time Base Classes
+                                </label>
+                                <div class="col-md-8">
+                                    <select id="cmd_time_class"
+                                            name="cmd_time_class" class="selectpicker"
+                                            data-live-search="true" data-size="10">
+                                        <option value="NA">Choose One</option>
+                                        <option value="1-20" {% if selected_delay_range == "1-20" %}selected{% endif %}>
+                                            1 - 20 min ({{ delay_range_counts.range_1_20 }})
+                                        </option>
+                                        <option value="21-40"
+                                                {% if selected_delay_range == "21-40" %}selected{% endif %}>21 - 40 min
+                                            ({{ delay_range_counts.range_21_40 }})
+                                        </option>
+                                        <option value="41-60"
+                                                {% if selected_delay_range == "41-60" %}selected{% endif %}>41 - 60 min
+                                            ({{ delay_range_counts.range_41_60 }})
+                                        </option>
+                                        <option value="above-60"
+                                                {% if selected_delay_range == "above-60" %}selected{% endif %}>Above 60
+                                            min ({{ delay_range_counts.range_above_60 }})
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="mb-2 btn-showcase d-flex gap-2 justify-content-end">
+                                    <button class="btn btn-success btn-hover-effect"
+                                            type="submit">
+                                        <i class="fa-solid fa-search me-1"></i>
+                                        Apply Filter
+                                    </button>
+                                    <a href="javaScript:void(0)"
+                                       class="btn btn-warning btn-hover-effect">
+                                        <i class="fa-solid fa-refresh me-1"></i>
+                                        Reset
+                                    </a>
+                                </div>
+                            </div>
+
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+            <div class="col-xs-12 col-sm-12 col-md-6 col-lg-12 col-xl-6 box-col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="header-top">
+                            <h5>PITB VTMS SUMMARY</h5>
+                        </div>
+                    </div>
+                    <div class="card-body main-session-devices" style="padding: 10px 20px;">
+                        <div class="row justify-content-center align-items-center gap-sm-0 gap-4">
+                            <div class="col-sm-6 box-col-none">
+                                <div class="common-align">
+                                    {% for graph in graph_summary_list %}
+                                        <div>
+                                            <div class="common-space">
+                                                <p>{{ graph.summary }}</p>
+                                                <span>{{ graph.count }} / {{ graph.percentage }}%</span>
+                                            </div>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-{% if graph.summary == "Excellent" %}success{% elif graph.summary == "Good" %}primary{% elif graph.summary == "Fair" %}warning{% elif graph.summary == "Poor" %}danger{% endif %}"
+                                                     role="progressbar"
+                                                     style="width: {{ graph.percentage }}%"
+                                                     aria-valuenow="{{ graph.percentage }}" aria-valuemin="0"
+                                                     aria-valuemax="100"></div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-sm-6 box-col-12">
+                                <div id="vtms-progress-time-chart"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row candidate-wrapper">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body candidates-box px-0">
+                        <div class="table-responsive custom-scrollbar">
+                            <table class="table" id="vehicle-monitoring-table">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Vehicle Type</th>
+                                    <th>Vehicle Code</th>
+                                    <th>PITB Code</th>
+                                    <th>Timestamp</th>
+                                    <th>Delay Min</th>
+                                    <th>Device</th>
+                                    <th>Distance</th>
+                                    <th>Working</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tbody_vehicle_status_datatable">
+                                {% for data in vtms_data_list %}
+                                    <tr style="background: {% if data.delay_minutes <= 20 %}#d8f7d5{% elif data.delay_minutes > 20 and data.delay_minutes <= 40 %}#ccc8fb{% elif data.delay_minutes > 40 and data.delay_minutes <= 60 %}#fbebcb{% elif data.delay_minutes > 60 %}#ffe2e2{% else %} {% endif %};">
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>
+                                            <div class="common-f-start">
+                                                <div class="attachment">
+                                                    <i class="fa-solid fa-car"></i>
+                                                    <span>{{ data.vehicle_type }}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="common-flex align-items-center">
+                                                <div>
+                                                    <a class="f-w-500" href="#!">Reg# {{ data.vehicle_code }}</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="common-flex align-items-center">
+                                                <div>
+                                                    <a class="f-w-500" href="#!">Reg# {{ data.pitb_code }}</a>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <ul class="educations">
+                                                <li>
+                                                    <p class="mb-0">{{ data.vendor_date_time }}</p>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                {% if data.delay_hours > 0.666 %}
+                                                    <!-- Show Push to PITB button if delay > 40 minutes (0.666 hours) -->
+                                                    <button type="button"
+                                                            class="btn btn-action btn-connect push-pitb-btn"
+                                                            style="background: #007bff; color: #fff;"
+                                                            data-vehicle-id="{{ data.vehicle_code }}"
+                                                            data-date="{{ data.vendor_date_time|date:'Y-m-d' }}"
+                                                            title="Connect to Vehicle">
+                                                        <i class="fa fa-link me-1"></i>Push To PITB
+                                                    </button>
+                                                {% else %}
+                                                    <!-- Show thumbs up icon if delay <= 40 minutes -->
+                                                    <div class="text-center" title="Data is up-to-date">
+                                                        <i class="fa fa-thumbs-up fa-2x text-success"></i>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <ul class="candidate-skill">
+                                                <li>
+                                                    <p class="mb-2">
+                                                        <span>{{ data.device_status }}</span>
+                                                    </p>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                        <td>
+                                            <ul class="candidate-skill">
+                                                <li>
+                                                    <p class="mb-2">
+                                                        <span>{{ data.distance|floatformat:2 }} km</span>
+                                                    </p>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                        <td>
+                                            <ul class="candidate-skill">
+                                                <li>
+                                                    <p class="mb-2">
+                                                        <span>{{ data.working_hours }} Hr</span>
+                                                    </p>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <!-- New change Mohid -->
+
+                                                <button type="button" class="btn btn-action btn-view"
+                                                        onclick="viewVehicle('{{ item.veh_code|default:'N/A' }}',
+                                                                '{{ item.pitb_code|default:'Waiting' }}',
+                                                                '{{ item.vehicle_type|default:'N/A' }}',
+                                                                '{{ item.vendor_date_time|date:'d M Y, H:i'|default:'N/A' }}',
+                                                                '{{ item.push_time|default:'N/A' }}',
+                                                                '{{ item.g_status|default:'N/A' }}',
+                                                                '{{ item.speed|default:'0' }}',
+                                                                '{{ item.direction|default:'N/A' }}',
+                                                                '{{ item.geo_location|default:'N/A' }}',
+                                                                '{{ item.device_status|default:'N/A' }}',
+                                                                '{{ item.ignition_status|default:'N/A' }}',
+                                                                '{{ item.duration|default:'N/A' }}')"
+                                                        title="View Details">
+                                                    <i class="fa fa-eye me-1"></i>View
+                                                </button>
+                                                <!-- End New Change -->
+                                                <button type="button" class="btn btn-action btn-connect"
+                                                        onclick="connectVehicle('{{ item.vehicle_code_field|default:'N/A' }}')"
+                                                        title="Connect to Vehicle">
+                                                    <i class="fa fa-link me-1"></i>Connect
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+    <!-- Container-fluid END-->
+
+{% endblock %}
+
+<!-- Plugins JS start-->
+{% block PluginsJS %}
+
+    <script src="{% static "assets/js/datatable/datatables/jquery.dataTables.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.select.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/select.bootstrap5.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/datatable.custom.js" %}"></script>
+    <script src="{% static "assets/js/sweet-alert/sweetalert.min.js" %}"></script>
+
+    <script src="{% static "assets/js/flat-pickr/flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/flat-pickr/custom-flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/select/bootstrap-select.min.js" %}"></script>
+    <script src="{% static "assets/js/tooltip-init.js" %}"></script>
+
+    <script src="{% static 'assets/js/chart/apex-chart/apex-chart.js' %}"></script>
+
+{% endblock %}
+<!-- Plugins JS Ends-->
+
+<!-- Custom JS -->
+{% block CustomerJS %}
+
+    <script>
+
+        $(document).ready(function () {
+
+        });
+
+        // Session chart
+        var sessionChart = {
+            series: {{ set_pie_series|safe }},
+            labels: {{ set_pie_labels|safe }},
+            chart: {
+                height: 285,
+                type: "donut",
+            },
+            plotOptions: {
+                pie: {
+                    expandOnClick: false,
+                    donut: {
+                        size: "75%",
+                        labels: {
+                            show: true,
+                            name: {
+                                offsetY: 4,
+                            },
+                            total: {
+                                show: true,
+                                fontSize: "20px",
+                                fontFamily: "Rubik, sans-serif",
+                                fontWeight: 500,
+                                label: {{ total_vehicles_count|safe }},
+                                formatter: () => "All-Vehicle",
+                            },
+                        },
+                    },
+                },
+            },
+            dataLabels: {
+                enabled: false,
+            },
+            {#colors: ["#7366FF", "#65c15c", "#ffb829", "#f0b829"],#}
+            colors: {{ set_pie_colors|safe }},
+            fill: {
+                type: "solid",
+            },
+            legend: {
+                show: false,
+            },
+            stroke: {
+                width: 0,
+            },
+            responsive: [
+                {
+                    breakpoint: 1753,
+                    options: {
+                        chart: {
+                            width: "100%",
+                            height: 250,
+                        },
+                    },
+                },
+                {
+                    breakpoint: 1571,
+                    options: {
+                        chart: {
+                            width: "100%",
+                            height: 220,
+                        },
+                    },
+                },
+                {
+                    breakpoint: 1440,
+                    options: {
+                        chart: {
+                            width: "100%",
+                            height: 190,
+                        },
+                    },
+                },
+                {
+                    breakpoint: 1290,
+                    options: {
+                        chart: {
+                            height: 160,
+                        },
+                    },
+                },
+                {
+                    breakpoint: 768,
+                    options: {
+                        chart: {
+                            height: 200,
+                        },
+                    },
+                },
+            ],
+        };
+
+        var sessionChart = new ApexCharts(document.querySelector("#vtms-progress-time-chart"), sessionChart);
+        sessionChart.render();
+        {##}
+        {#// PUSH to PITB Button Click Event#}
+        {#// Push to PITB button handler#}
+        {#$(document).on('click', '.push-pitb-btn', function () {#}
+        {#    var vehicleId = $(this).data('vehicle-id');#}
+        {#    var date = $(this).data('date');#}
+        {#    var button = $(this);#}
+        {##}
+        {#    // Disable button and show loading indicator#}
+        {#    button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');#}
+        {##}
+        {#    // Show initial processing notification#}
+        {#    Swal.fire({#}
+        {#        title: 'Processing...',#}
+        {#        html: `Preparing to push data for vehicle <b>${vehicleId}</b><br>Fetching PITB code...`,#}
+        {#        allowOutsideClick: false,#}
+        {#        allowEscapeKey: false,#}
+        {#        showConfirmButton: false,#}
+        {#        didOpen: () => {#}
+        {#            Swal.showLoading();#}
+        {#        }#}
+        {#    });#}
+        {##}
+        {#    // First fetch the PITB code for this vehicle#}
+        {#    $.ajax({#}
+        {##}
+        {#            // Update processing message#}
+        {#            Swal.update({#}
+        {#                html: `Pushing data for vehicle <b>${vehicleId}</b>#}
+        {#               Please wait...`#}
+        {#            });#}
+        {##}
+        {#            // Now call PushToPITB with the PITB code#}
+        {#            $.ajax({#}
+        {#                url: '{% url "PushToPITB" %}',#}
+        {#                type: 'POST',#}
+        {#                data: {#}
+        {#                    'vehicle_code': vehicleId,  // Use the PITB code here#}
+        {#                    'selected_date': date,#}
+        {#                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()#}
+        {#                },#}
+        {#                success: function (response) {#}
+        {#                    if (response.status === 200) {#}
+        {#                        Swal.fire({#}
+        {#                            title: 'Success!',#}
+        {#                            html: `<b>Data pushed to PITB successfully!</b><br>#}
+        {#                           Vehicle: ${vehicleId}<br>#}
+        {#                           PITB Code: ${pitbCode}<br>#}
+        {#                           Date: ${date}<br>#}
+        {#                           Records Pushed: ${response.count}`,#}
+        {#                            icon: 'success',#}
+        {#                            confirmButtonText: 'OK'#}
+        {#                        });#}
+        {#                    } else {#}
+        {#                        Swal.fire({#}
+        {#                            title: 'Warning',#}
+        {#                            html: `API responded with status: ${response.status || 'Unknown'}<br>#}
+        {#                           ${response.api_response?.body || 'No response details available'}`,#}
+        {#                            icon: 'warning',#}
+        {#                            confirmButtonText: 'OK'#}
+        {#                        });#}
+        {#                    }#}
+        {#                },#}
+        {#                error: function (xhr, status, error) {#}
+        {#                    Swal.fire({#}
+        {#                        title: 'Error!',#}
+        {#                        html: `Failed to push data to PITB.<br>#}
+        {#                      Error: ${error || 'Unknown error'}`,#}
+        {#                        icon: 'error',#}
+        {#                        confirmButtonText: 'OK'#}
+        {#                    });#}
+        {#                },#}
+        {#                complete: function () {#}
+        {#                    // Re-enable button and restore icon#}
+        {#                    button.prop('disabled', false).html('<i class="fa fa-link me-1"></i>Push To PITB');#}
+        {#                },#}
+        {#                timeout: 180000 // 3 minute timeout#}
+        {#            });#}
+        {#        },#}
+        {#        error#}
+        {#:#}
+        {##}
+        {#    function (xhr, status, error) {#}
+        {#        Swal.fire({#}
+        {#            title: 'Error!',#}
+        {#            html: `Failed to retrieve PITB code for vehicle ${vehicleId}.<br>#}
+        {#              Error: ${error || 'Unknown error'}`,#}
+        {#            icon: 'error',#}
+        {#            confirmButtonText: 'OK'#}
+        {#        });#}
+        {#        button.prop('disabled', false).html('<i class="fa fa-link me-1"></i>Push To PITB');#}
+        {#    }#}
+        {# });#}
+        {# })#}
+        {#;#}
+
+    </script>
+
+{% endblock %}

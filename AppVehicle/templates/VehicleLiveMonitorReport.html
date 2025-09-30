@@ -1,0 +1,549 @@
+{% extends "master.html" %}
+{% load static %}
+
+{% block title %}Vehicle Report{% endblock %}
+
+<!-- Custom Plugins CSS -->
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/jquery.dataTables.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/sweetalert2.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select/bootstrap-select.min.css" %}">
+{% endblock %}
+<!--End Custom Plugins CSS -->
+
+{% block LeafletLink %}
+    <!--Google Key-->
+    <script type="text/javascript"
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDyN4NVgaHV6-AbuAdWqSBM07iay6gbfKc&libraries=places"></script>
+
+    <!--leaflet js library style link -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+          integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+          crossorigin=""/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.css' %}"/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.css' %}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+{% endblock %}
+
+{% block link %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/app_css/GetColor-Tooltip-Vehicle.css" %}">
+{% endblock %}
+
+{% block css %}
+
+
+
+{% endblock %}
+
+<!-- Header Page Hierarchy-->
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    {#        <h3>{{breadcrumb.title}} </h3>#}
+                    <h3>Vehicle Report</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/index">
+                            <svg class="stroke-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                            </svg>
+                        </a></li>
+                        {#          <li class="breadcrumb-item">{{breadcrumb.parent}}</li>#}
+                        <li class="breadcrumb-item">Vehicle</li>
+                        <li class="breadcrumb-item active">Report</li>
+                        {#          <li class="breadcrumb-item active">{{breadcrumb.child}}</li>#}
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+<!-- Header Page Hierarchy-->
+{% block content %}
+    <div class="container-fluid main-companies">
+
+        <!-- Vehicle Report Filter -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="dateRangeForm" method="POST" action="{% url 'VehicleGeoStatusMovementReport' %}">
+                            {% csrf_token %}
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-2">
+                                    <label class="form-label" for="vehicle_type">Vehicle Type:</label>
+                                    <select class="form-select" name="vehicle_type" id="vehicle_type">
+                                        <option value="">All</option>
+                                        {% for vt in vehicle_types %}
+                                            <option value="{{ vt }}"
+                                                    {% if vt == request.POST.vehicle_type %}selected{% endif %}>{{ vt }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label" for="vehicle_code">Vehicle Code:</label>
+                                    <select class="selectpicker" name="vehicle_code" id="vehicle_code"
+                                            data-live-search="true">
+                                        {% for code in vehicle_codes %}
+                                            <option value="{{ code }}"
+                                                    {% if code == selected_vehicle_code %}selected{% endif %}>{{ code }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label" for="vehicle_status">Vehicle Status:</label>
+                                    <select class="form-select" name="vehicle_status" id="vehicle_status">
+                                        {% for value, label in vehicle_status_options %}
+                                            <option value="{{ value }}"
+                                                    {% if value == selected_vehicle_status %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="startDate" class="form-label">From Date</label>
+                                    <input type="date" class="form-control" id="startDate" name="start_date"
+                                           value="{{ start_date|date:'Y-m-d' }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="endDate" class="form-label">To Date</label>
+                                    <input type="date" class="form-control" id="endDate" name="end_date"
+                                           value="{{ end_date|date:'Y-m-d' }}">
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary me-2">Filter</button>
+                                    <!-- Export to Excel button -->
+                                    <button type="submit" name="export" value="excel" class="btn btn-success">Export
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Highcharts Visualization -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        {% comment %} <h5>Vehicle Activity Summary</h5> {% endcomment %}
+                    </div>
+                    <div class="card-body">
+                        <div id="vehicleSummaryChart" style="height: 400px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicles Table -->
+        <div class="row candidate-wrapper">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body candidates-box px-0">
+                        <div class="table-responsive custom-scrollbar">
+                            <table class="table" id="vehicle-monitoring-table">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Vehicle</th>
+                                    <th>Vehicle Code</th>
+                                    <th>Distance</th>
+                                    <th>Working</th>
+                                    <th>Moving</th>
+                                    <th>Parked</th>
+                                    <th>Ideal</th>
+                                    <th>Offline</th>
+                                    <th>No Response</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tbody_vehicle_status_datatable">
+                                {% if data %}
+
+                                    {% for row in data %}
+                                        <tr>
+                                            <th scope="row">{{ forloop.counter }}</th>
+                                            <td>
+                                                <div class="common-flex align-items-center">
+                                                    <div class="position-relative">
+                                                        <img class="img-fluid rounded-circle"
+                                                             src="{% static 'assets/images/legend/vehicle/vehicle.png' %}"
+                                                             alt="user">
+                                                        <div class="status" style="width: 15px; height: 15px;">
+                                                            <div class="inner-dot bg-{% if data.g_status == "Moving" %}success{% elif data.g_status == "Idle" %}info{% elif data.g_status == "Parked" %}warning{% elif data.g_status == "Offline" %}light{% else %}danger{% endif %}"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div><a class="f-w-500" href="#!">Reg# {{ row.pitb_code }}
+                                                        - {{ row.register_no }}</a>
+                                                        <p>Chasis# {{ row.chasis_no }}</p>
+                                                    </div>
+                                                </div>
+                                                <div class="common-f-start">
+                                                    <div class="attachment">
+                                                        <i class="fa-solid fa-car"></i>
+                                                        <span>{{ row.vehicle_type }}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">
+                                                    {{ row.vehicle_code|default:"N/A" }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {{ row.distance|default:"--" }}
+                                            </td>
+                                            <td>
+                                                {{ row.working.duration|default:"--" }}
+                                            </td>
+                                            <td>{{ row.moving.duration|default:"--" }}</td>
+                                            <td>{{ row.parked.duration|default:"--" }}</td>
+                                            <td>{{ row.idle.duration|default:"--" }}</td>
+                                            <td>{{ row.offline.duration|default:"--" }}</td>
+                                            <td>{{ row.no_response.duration|default:"--" }}</td>
+                                            <td>
+                                                <div class="d-flex">
+                                                    <a href="{% url 'SingleVehicleGeoStatusMovementReport' row.vehicle_code %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="btn btn-primary text-white" data-bs-toggle="tooltip" title="View" target="_blank">
+                                                        <i class="fa-solid fa-eye text-white"></i> View
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+{% endblock %}
+
+<!-- Plugins JS start-->
+{% block PluginsJS %}
+
+    <script src="{% static "assets/js/datatable/datatables/jquery.dataTables.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.select.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/select.bootstrap5.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/datatable.custom.js" %}"></script>
+    <script src="{% static "assets/js/sweet-alert/sweetalert.min.js" %}"></script>
+
+    <script src="{% static "assets/js/flat-pickr/flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/flat-pickr/custom-flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/select/bootstrap-select.min.js" %}"></script>
+    <script src="{% static "assets/js/tooltip-init.js" %}"></script>
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', function () {
+            if (document.getElementById('vehicleSummaryChart')) {
+                // Prepare data for the chart
+                const chartData = {
+                    categories: [],  // Will contain vehicle codes
+                    working: [],
+                    moving: [],
+                    parked: [],
+                    idle: [],
+                    offline: [],
+                    noResponse: [],
+                    distance: [],
+                    // Store original duration strings
+                    originalDurations: {
+                        working: [],
+                        moving: [],
+                        parked: [],
+                        idle: [],
+                        offline: [],
+                        noResponse: []
+                    }
+                };
+
+                // Process the table data for the chart
+                {% if data %}
+                    {% for row in data %}
+                        // Add vehicle code to categories
+                        chartData.categories.push("{{ row.vehicle_code.vehicle_code }}");
+
+                        // Store original duration strings
+                        chartData.originalDurations.working.push("{{ row.working.duration }}");
+                        chartData.originalDurations.moving.push("{{ row.moving.duration }}");
+                        chartData.originalDurations.parked.push("{{ row.parked.duration }}");
+                        chartData.originalDurations.idle.push("{{ row.idle.duration }}");
+                        chartData.originalDurations.offline.push("{{ row.offline.duration }}");
+                        chartData.originalDurations.noResponse.push("{{ row.no_response.duration }}");
+
+                        // Convert duration to minutes for chart scaling
+                        function durationToMinutes(duration) {
+                            if (!duration) return 0;
+                            duration = duration.trim();
+                            if (duration === "--") return 0;
+
+                            const parts = duration.split(/H|M/);
+                            const hours = parseInt(parts[0]) || 0;
+                            const minutes = parseInt(parts[1]) || 0;
+                            return (hours * 60) + minutes;
+                        }
+
+                        // Store durations in minutes for the chart
+                        chartData.working.push(durationToMinutes("{{ row.working.duration }}"));
+                        chartData.moving.push(durationToMinutes("{{ row.moving.duration }}"));
+                        chartData.parked.push(durationToMinutes("{{ row.parked.duration }}"));
+                        chartData.idle.push(durationToMinutes("{{ row.idle.duration }}"));
+                        chartData.offline.push(durationToMinutes("{{ row.offline.duration }}"));
+                        chartData.noResponse.push(durationToMinutes("{{ row.no_response.duration }}"));
+
+                        // Parse distance
+                        let distance = "{{ row.distance|default:'0 km' }}".replace(' km', '').trim();
+                        distance = distance === '--' ? 0 : parseFloat(distance) || 0;
+                        chartData.distance.push(distance);
+                    {% endfor %}
+                {% endif %}
+
+                // Create the chart
+                if (chartData.categories.length > 0) {
+                    Highcharts.chart('vehicleSummaryChart', {
+                        chart: {
+                            type: 'column'
+                        },
+                        title: {
+                            text: 'Vehicle Activity Summary',
+                            align: 'left'
+                        },
+                        xAxis: {
+                            categories: chartData.categories,
+                            crosshair: true,
+                            title: {
+                                text: 'Vehicle Codes'
+                            },
+                            labels: {
+                                rotation: -45
+                            }
+                        },
+                        yAxis: [{
+                            title: {
+                                text: 'Duration (H:MM)'
+                            },
+                            min: 0,
+                            labels: {
+                                formatter: function () {
+                                    // Convert minutes back to H:MM format
+                                    const hours = Math.floor(this.value / 60);
+                                    const mins = this.value % 60;
+                                    return `${hours}:${mins < 10 ? '0' + mins : mins}`;
+                                }
+                            }
+                        }, {
+                            title: {
+                                text: 'Distance (km)'
+                            },
+                            opposite: true,
+                            min: 0
+                        }],
+                        tooltip: {
+                            shared: true,
+                            formatter: function () {
+                                let tooltip = '<b>' + this.x + '</b>';
+                                const pointIndex = this.points[0].point.index;
+
+                                this.points.forEach(function (point) {
+                                    if (point.series.name === 'Distance (km)') {
+                                        tooltip += '<br/>' + point.series.name + ': ' + point.y.toFixed(2) + ' km';
+                                    } else {
+                                        // Show original duration string
+                                        const durationType = point.series.name.toLowerCase().replace(' ', '');
+                                        const originalDuration = chartData.originalDurations[durationType][pointIndex];
+                                        tooltip += '<br/>' + point.series.name + ': ' + originalDuration;
+                                    }
+                                });
+                                return tooltip;
+                            }
+                        },
+                        plotOptions: {
+                            column: {
+                                stacking: 'normal',
+                                borderWidth: 0,
+                                dataLabels: {
+                                    enabled: true,
+                                    formatter: function () {
+                                        if (this.series.name === 'Distance (km)') {
+                                            return this.y.toFixed(2) + ' km';
+                                        }
+                                        // Show original duration for statuses
+                                        const durationType = this.series.name.toLowerCase().replace(' ', '');
+                                        return chartData.originalDurations[durationType][this.point.index];
+                                    }
+                                }
+                            }
+                        },
+                        series: [{
+                            name: 'Working',
+                            data: chartData.working,
+                            color: '#28a745'
+                        }, {
+                            name: 'Moving',
+                            data: chartData.moving,
+                            color: '#17a2b8'
+                        }, {
+                            name: 'Parked',
+                            data: chartData.parked,
+                            color: '#ffc107'
+                        }, {
+                            name: 'Idle',
+                            data: chartData.idle,
+                            color: '#6c757d'
+                        }, {
+                            name: 'Offline',
+                            data: chartData.offline,
+                            color: '#343a40'
+                        }, {
+                            name: 'No Response',
+                            data: chartData.noResponse,
+                            color: '#dc3545'
+                        }, {
+                            name: 'Distance (km)',
+                            data: chartData.distance,
+                            type: 'spline',
+                            yAxis: 1,
+                            color: '#6610f2',
+                            marker: {
+                                lineWidth: 2,
+                                lineColor: '#6610f2',
+                                fillColor: 'white'
+                            }
+                        }]
+                    });
+                } else {
+                    document.getElementById('vehicleSummaryChart').innerHTML =
+                        '<div class="text-center p-4">No data available for the selected filters</div>';
+                }
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize select picker
+            $('.selectpicker').selectpicker();
+
+            // Disable vehicle code select initially
+            $('#vehicle_code').prop('disabled', true).selectpicker('refresh');
+
+            // Function to update vehicle codes
+            function updateVehicleCodes() {
+                const vehicleType = $('#vehicle_type').val();
+                const gStatus = $('#g_status').val();
+                const vehicleCodeSelect = $('#vehicle_code');
+
+                // Clear previous options and show loading state
+                vehicleCodeSelect.empty().append('<option value="">Loading...</option>');
+                vehicleCodeSelect.prop('disabled', true).selectpicker('refresh');
+
+                // Only make AJAX call if at least one filter is selected
+                if (vehicleType || gStatus) {
+                    $.ajax({
+                        url: '{% url "get_vehicle_codes" %}',
+                        data: {
+                            vehicle_type: vehicleType,
+                            g_status: gStatus
+                        },
+                        success: function (data) {
+                            vehicleCodeSelect.selectpicker('destroy');
+                            vehicleCodeSelect.empty();
+
+                            if (data.vehicle_codes && data.vehicle_codes.length > 0) {
+                                vehicleCodeSelect.append(`<option value="">All (${data.count})</option>`);
+                                $.each(data.vehicle_codes, function (index, code) {
+                                    vehicleCodeSelect.append($('<option>', {
+                                        value: code,
+                                        text: code
+                                    }));
+                                });
+
+                                // Set selected value after options are loaded
+                                const selectedCode = "{{ request.GET.vehicle_code|default:'' }}";
+                                if (selectedCode) {
+                                    vehicleCodeSelect.val(selectedCode);
+                                }
+                            } else {
+                                vehicleCodeSelect.append(`<option value="">No matching vehicles</option>`);
+                            }
+
+                            vehicleCodeSelect.prop('disabled', false).selectpicker();
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("Error fetching vehicle codes:", error);
+                            vehicleCodeSelect.selectpicker('destroy');
+                            vehicleCodeSelect.empty().append('<option value="">Error loading data</option>');
+                            vehicleCodeSelect.prop('disabled', true).selectpicker();
+                        }
+                    });
+                } else {
+                    // If no filters are selected, disable the select
+                    vehicleCodeSelect.selectpicker('destroy');
+                    vehicleCodeSelect.empty().append('<option value="">Select filters first</option>');
+                    vehicleCodeSelect.prop('disabled', true).selectpicker();
+                }
+            }
+
+            // Debounce the update function to prevent rapid requests
+            let debounceTimer;
+            $('#vehicle_type, #g_status').change(function () {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(updateVehicleCodes, 300);
+            });
+
+            // Also call it on page load if filters are already selected
+            if ($('#vehicle_type').val() || $('#g_status').val()) {
+                updateVehicleCodes();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Previous code...
+
+            // Set selected vehicle code on page load
+            const selectedVehicleCode = "{{ request.GET.vehicle_code|default:'' }}";
+            if (selectedVehicleCode) {
+                $('#vehicle_code').val(selectedVehicleCode);
+                $('#vehicle_code').selectpicker('refresh');
+            }
+        });
+    </script>
+{% endblock %}
+<!-- Plugins JS Ends-->
+
+
+{% block LeafletJS %}
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+            integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+            crossorigin=""></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/GoogleMutant/Leaflet.GoogleMutant.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/measure/L.MeasuringTool.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.js' %}"></script>
+    <!-- Dependency to Leaflet Draw -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://npmcdn.com/leaflet.path.drag/src/Path.Drag.js"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Editable/Leaflet.Editable.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.geometryutil.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.snap.js" %}"></script>
+
+    <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+
+{% endblock %}

@@ -1,0 +1,350 @@
+{% extends "master.html" %}
+{% load static %}
+
+{% block title %}Telecom Data{% endblock %}
+
+<!-- Custom Plugins CSS -->
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/jquery.dataTables.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/sweetalert2.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select/bootstrap-select.min.css" %}">
+{% endblock %}
+<!--End Custom Plugins CSS -->
+
+{% block LeafletLink %}
+    <!--Google Key-->
+    <script type="text/javascript"
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDyN4NVgaHV6-AbuAdWqSBM07iay6gbfKc&libraries=places"></script>
+
+    <!--leaflet js library style link -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+          integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+          crossorigin=""/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.css' %}"/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.css' %}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+{% endblock %}
+
+{% block css %}
+
+    .default-map-js-height{
+    height: 725px;
+    {#    width: 100vw;#}
+    {#    height: 100vh;#}
+    }
+    .filter-companies .accordion-item {
+    border: 1px solid #e9edf1;
+    }
+
+    .main-file-sidebar .md-sidebar .md-sidebar-aside .common-sort-card .files-left-icons li a svg {
+    width: 24px;
+    height: 24px;
+    }
+
+    .border-tb-l-radius {
+    border-top-left-radius: 5px !important;
+    border-bottom-left-radius: 5px !important;
+    }
+
+    .main-file-sidebar .md-sidebar .md-sidebar-aside .common-sort-card .files-left-icons li {
+    margin-bottom: 10px;
+    }
+
+    .main-file-sidebar .md-sidebar .md-sidebar-aside .common-sort-card .files-left-icons li a {
+    padding: 6px 10px
+    }
+
+    .common-space {
+    justify-content: normal;
+    }
+
+    .course-box .card-body {
+    padding: 10px 15px;
+    }
+    .modal{
+        --bs-modal-width: 800px !important;
+    }
+
+{% endblock %}
+
+<!-- Header Page Hierarchy-->
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    {#        <h3>{{breadcrumb.title}} </h3>#}
+                    <h3>Telecom Data</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/index">
+                            <svg class="stroke-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                            </svg>
+                        </a></li>
+                        {#          <li class="breadcrumb-item">{{breadcrumb.parent}}</li>#}
+                        <li class="breadcrumb-item">Telecom</li>
+                        <li class="breadcrumb-item active">Data</li>
+                        {#          <li class="breadcrumb-item active">{{breadcrumb.child}}</li>#}
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+<!-- Header Page Hierarchy-->
+
+{% block content %}
+
+    <!-- Container-fluid starts-->
+    <div class="container-fluid main-companies">
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+         <!-- Terminal Type Filter -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+
+                        <form class="form form-horizontal" action=""
+                              method="post" accept-charset='utf-8'
+                              enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="row g-3 align-items-end">
+
+                                {% comment %} <div class="col-md-2 ">
+                                    <label class="form-label">Termninal With Type</label>
+                                    <select id="terminal_type"
+                                            name="terminal_type"
+                                            class="selectpicker"
+                                            data-live-search="true">
+                                        <option value="NA" >Choose One</option>
+                                        <option value="Installed" {% if selected_type == "Installed" %}selected{% endif %}>Installed</option>
+                                        <option value="Advanced" {% if selected_type == "Advanced" %}selected{% endif %}>Advanced</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 ">
+                                    <label class="form-label">Termninal With Status</label>
+                                    <select id="terminal_status"
+                                            name="terminal_status"
+                                            class="selectpicker"
+                                            data-live-search="true">
+                                        <option value="NA" >Choose One</option>
+                                        <option value="Active" {% if selected_status == "Active" %}selected{% endif %}>Active</option>
+                                        <option value="Blocked" {% if selected_status == "Blocked" %}selected{% endif %}>Blocked</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-center justify-content-center">
+                                    <button type="submit" class="btn btn-primary me-2">Filter</button>
+                                </div> {% endcomment %}
+
+                                <!-- Align Filter & Add button to the end -->
+                                <div class="col d-flex justify-content-end">
+                                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#AddTelecomModal">
+                                        <i class="fa fa-plus me-1"></i> Add Telecom
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+                <!-- TerminalData Table -->
+        <div class="row candidate-wrapper">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body candidates-box px-0">
+                        <div class="table-responsive custom-scrollbar">
+                            <table class="table" id="vehicle-monitoring-table">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Sim No</th>
+                                    <th>GSM Co.</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tbody_vehicle_status_datatable">
+                                {% if sim %}
+                                    {% for s in sim %}
+                                        <tr>
+                                            <th scope="row">{{ forloop.counter }}</th>
+                                            <td>{{ s.sim_no }}</td>
+                                            <td>{{ s.gsm_co }}</td>
+                                            <td>
+                                                <button type="button" class="btn btn-primary me-2 edit-terminal-btn" title="Update" data-bs-toggle="modal" data-bs-target="#UpdateTelecomModal" data-telecom_id="{{ s.telecom_id }}" data-sim_no="{{ s.sim_no }}" data-gsm_co="{{ s.gsm_co }}">
+                                                    <i class="fa-solid fa-edit"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        No Telecom Data Found
+                                    </tr>
+                                {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Telecom Data Modal -->
+        <div class="modal fade" id="AddTelecomModal" tabindex="-1" aria-labelledby="connectTerminalModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="connectVehicleModalLabel">
+                            <i class="fa fa-link me-2"></i>Add Telecom Data
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="connectVehicleContent">
+                        <form id="connectVehicleForm" method="post" class="row" action="{% url 'telecom-data' %}">
+                            {% csrf_token %}
+                            <div class="col-md-12 mb-3">
+                                <label for="sim_no" class="form-label">Sim No.<span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="sim_no" name="sim_no" placeholder="Enter sim number" required>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label for="gsm_co" class="form-label">GSM Co.<span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="gsm_co" name="gsm_co"
+                                    placeholder="Enter GSM Company" required>
+                            </div>
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="confirmConnect">
+                                <i class="fa fa-link me-2"></i>Add
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Update Telecom Data Modal -->
+        <div class="modal fade" id="UpdateTelecomModal" tabindex="-1" aria-labelledby="updateTerminalModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="connectVehicleModalLabel">
+                            <i class="fa fa-link me-2"></i>update Telecom Data
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="connectVehicleContent">
+                        <form id="connectVehicleForm" method="post" class="row" action="{% url 'update-telecom-data' %}">
+                            {% csrf_token %}
+                            <input type="hidden" id="update_telecom_id" name="telecom_id">
+                            <div class="col-md-12 mb-3">
+                                <label for="update_sim_no" class="form-label">Sim No.<span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="update_sim_no" name="sim_no" placeholder="Enter sim number">
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label for="update_gsm_co" class="form-label">GSM Co.<span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="update_gsm_co" name="gsm_co" placeholder="Enter terminal model">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="confirmConnect">
+                                <i class="fa fa-link me-2"></i>Update
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Container-fluid Ends-->
+
+{% endblock %}
+
+<!-- Plugins JS start-->
+{% block PluginsJS %}
+
+    <script src="{% static "assets/js/datatable/datatables/jquery.dataTables.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.select.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/select.bootstrap5.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/datatable.custom.js" %}"></script>
+    <script src="{% static "assets/js/sweet-alert/sweetalert.min.js" %}"></script>
+
+    <script src="{% static "assets/js/flat-pickr/flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/flat-pickr/custom-flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/select/bootstrap-select.min.js" %}"></script>
+    <script src="{% static "assets/js/tooltip-init.js" %}"></script>
+
+{% endblock %}
+<!-- Plugins JS Ends-->
+
+{% block LeafletJS %}
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+            integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+            crossorigin=""></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/GoogleMutant/Leaflet.GoogleMutant.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/measure/L.MeasuringTool.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.js' %}"></script>
+    <!-- Dependency to Leaflet Draw -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://npmcdn.com/leaflet.path.drag/src/Path.Drag.js"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Editable/Leaflet.Editable.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.geometryutil.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.snap.js" %}"></script>
+
+    <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+
+{% endblock %}
+
+<!-- Custom JS -->
+{% block CustomerJS %}
+    <script src="{% static "assets/script/include/DigitalArz.js" %}" type="text/javascript"></script>
+    <script src="{% static "assets/script/include/TOCLayerModel.js" %}" type="text/javascript"></script>
+    {#    <script src="{% static "js/RouteModel.js" %}" type="text/javascript"></script>#}
+    <script src="{% static "VehicleModel.js" %}" type="text/javascript"></script>
+    <script src="{% static "ReportModel.js" %}" type="text/javascript"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const editButtons = document.querySelectorAll('.edit-terminal-btn');
+    editButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById('update_telecom_id').value = btn.dataset.telecom_id;
+            document.getElementById('update_sim_no').value = btn.dataset.sim_no;
+            document.getElementById('update_gsm_co').value = btn.dataset.gsm_co;
+        });
+    });
+});
+</script>
+
+{% endblock %}
+<!-- End Custom JS -->

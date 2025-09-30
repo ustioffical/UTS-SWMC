@@ -1,0 +1,463 @@
+{% extends "master.html" %}
+{% load static %}
+
+{% block title %}Vehicle Last Location{% endblock %}
+
+<!-- Custom Plugins CSS -->
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/flatpickr/flatpickr.min.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select/bootstrap-select.min.css" %}">
+{% endblock %}
+<!--End Custom Plugins CSS -->
+
+{% block LeafletLink %}
+    <!--Google Key-->
+    <script type="text/javascript"
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDyN4NVgaHV6-AbuAdWqSBM07iay6gbfKc&libraries=places"></script>
+
+    <!--leaflet js library style link -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+          integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+          crossorigin=""/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.css' %}"/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.css' %}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+{% endblock %}
+
+{% block css %}
+    .default-map-js-height{
+        height: 400px;
+    }
+
+    .time-difference-red {
+        color: red;
+        font-weight: bold;
+    }
+
+    .time-difference-green {
+        color: green;
+        font-weight: bold;
+    }
+
+    .location-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        transition: margin-top 0.3s ease;
+    }
+
+    .location-card.dropdown-open {
+        margin-top: 150px;
+    }
+
+    .location-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 10px 15px;
+        border-radius: 8px 8px 0 0;
+        margin: -15px -15px 15px -15px;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .vendor-header {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .sync-btn {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+        }
+    }
+{% endblock %}
+
+<!-- Header Page Hierarchy-->
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3>Vehicle Last Location Comparison</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/index">
+                            <svg class="stroke-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                            </svg>
+                        </a></li>
+                        <li class="breadcrumb-item">Asset</li>
+                        <li class="breadcrumb-item">Vehicle</li>
+                        <li class="breadcrumb-item active">Last Location</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+<!-- Header Page Hierarchy-->
+
+{% block content %}
+    <!-- Container-fluid starts-->
+    <div class="container-fluid main-tasks">
+
+        <!-- Success/Error Messages -->
+        {% if message %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa fa-check-circle"></i> {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+
+        <!-- Vehicle Selection Row -->
+        <div class="row mb-4">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Select Vehicle</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" id="vehicleSelectionForm">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Vehicle Code</label>
+                                        <select class="form-select" id="vehicle_code" name="vehicle_code" data-live-search="true" data-size="5">
+                                            <option value="">Select Vehicle Code</option>
+                                            {% for vehicle in vehicle_codes %}
+                                                <option value="{{ vehicle.vehicle_code }}"
+                                                    {% if vehicle.vehicle_code|stringformat:"s" == request.POST.vehicle_code|stringformat:"s" %}selected{% endif %}>
+                                                    {{ vehicle.vehicle_code }} - {{ vehicle.register_no }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 d-flex align-items-end">
+                                    <div class="mb-3">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa fa-search"></i> Compare Locations
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison Results Row -->
+        {% if uts_last_location_time %}
+        <div class="row" id="comparison-results">
+            <!-- UTS Detail Column -->
+            <div class="col-xl-6">
+                <div class="card location-card">
+                    <div class="location-header">
+                        <i class="fa fa-database"></i> UTS Database Detail
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="default-map-js-height b-r-10" id="uts-location-map"></div>
+                        <div class="p-3">
+                            <div class="row">
+                                <div class="col-12">
+                                    <h6 class="mb-2"><i class="fa fa-clock text-primary"></i> Suthra Time</h6>
+                                    <p class="mb-2">{{ uts_last_location_time }}</p>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Latitude:</small><br>
+                                    <strong>{{ uts_last_location_latitude }}</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Longitude:</small><br>
+                                    <strong>{{ uts_last_location_longitude }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vendor Detail Column -->
+            <div class="col-xl-6">
+                <div class="card location-card">
+                    <div class="location-header vendor-header">
+                        <i class="fa fa-satellite-dish"></i> Vendor API Detail
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="default-map-js-height b-r-10" id="vendor-location-map"></div>
+                        <div class="p-3">
+                            <div class="row">
+                                <div class="col-12">
+                                    <h6 class="mb-2"><i class="fa fa-clock text-danger"></i> Vendor Time</h6>
+                                    <p class="mb-2">{{ vendor_last_location_time }}</p>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Latitude:</small><br>
+                                    <strong>{{ vendor_last_location_latitude }}</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Longitude:</small><br>
+                                    <strong>{{ vendor_last_location_longitude }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+         <div class="row">
+        <div class="col-xl-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Vehicle Schedule Information</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <h4 class="mb-3">Working Hours</h4>
+                            <h2>{{ working_hour }} hours</h2>
+                        </div>
+                        <div class="col-md-6">
+                            <h4 class="mb-3">Distance Travelled</h4>
+                            <h2>{{ distance }} km</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+        <!-- Time Difference and Sync Row -->
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Sync Status</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="row justify-content-center">
+                            <div class="col-md-6">
+                                <h4 class="mb-3">Time Difference</h4>
+                                <h2 class="{% if color == 'red' %}time-difference-red{% else %}time-difference-green{% endif %}">
+                                    {{ time_difference_minutes }} minutes
+                                </h2>
+                                {% if color == 'red' %}
+                                    <div class="mt-3">
+                                        <form method="post" style="display: inline;">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="vehicle_code" value="{{ request.POST.vehicle_code }}">
+                                            <input type="hidden" name="sync_data" value="true">
+                                            <button type="submit" class="btn btn-danger btn-lg sync-btn">
+                                                <i class="fa fa-sync"></i> Sync Vehicle Data
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <p class="text-muted mt-2">
+                                        <i class="fa fa-exclamation-triangle text-warning"></i>
+                                        Data synchronization required - time difference exceeds threshold
+                                    </p>
+                                {% else %}
+                                    <div class="mt-3">
+                                        <span class="badge badge-success badge-pill">
+                                            <i class="fa fa-check"></i> Data is synchronized
+                                        </span>
+                                    </div>
+                                    <p class="text-muted mt-2">
+                                        <i class="fa fa-check-circle text-success"></i>
+                                        Vehicle data is up to date
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+    <!-- Container-fluid Ends-->
+
+{% endblock %}
+
+<!-- Plugins JS start-->
+{% block PluginsJS %}
+    <script src="{% static "assets/js/flat-pickr/flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/flat-pickr/custom-flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/form-validation-custom.js" %}"></script>
+    <script src="{% static "assets/js/select/bootstrap-select.min.js" %}"></script>
+{% endblock %}
+<!-- Plugins JS Ends-->
+
+{% block LeafletJS %}
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+            integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+            crossorigin=""></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/GoogleMutant/Leaflet.GoogleMutant.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/measure/L.MeasuringTool.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.js' %}"></script>
+    <!-- Dependency to Leaflet Draw -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://npmcdn.com/leaflet.path.drag/src/Path.Drag.js"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Editable/Leaflet.Editable.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.geometryutil.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.snap.js" %}"></script>
+    <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+{% endblock %}
+
+<!-- Custom JS -->
+{% block CustomerJS %}
+    <script src="{% static "assets/script/include/DigitalArz.js" %}" type="text/javascript"></script>
+    <script src="{% static "assets/script/include/TOCLayerModel.js" %}" type="text/javascript"></script>
+    <script>
+        let utsMap = null;
+        let vendorMap = null;
+
+        $(document).ready(function () {
+            // Initialize select picker
+            $('#vehicle_code').selectpicker();
+
+            // Initialize maps if location data exists
+            {% if uts_last_location_time %}
+                initializeMaps();
+            {% endif %}
+
+            // Auto-hide success message after 5 seconds
+            setTimeout(function() {
+                $('.alert').fadeOut();
+            }, 5000);
+
+            // Handle dropdown events to move maps
+            handleDropdownEvents();
+        });
+
+        function initializeMaps() {
+            // Initialize UTS Map
+            utsMap = L.map('uts-location-map').setView([{{ uts_last_location_latitude }}, {{ uts_last_location_longitude }}], 16);
+
+            // Add tile layer for UTS map
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(utsMap);
+
+            // Add marker for UTS location
+            var utsMarker = L.marker([{{ uts_last_location_latitude }}, {{ uts_last_location_longitude }}])
+                .addTo(utsMap)
+                .bindPopup('<b>UTS Database Location</b><br>Time: {{ uts_last_location_time }}<br>Lat: {{ uts_last_location_latitude }}<br>Lng: {{ uts_last_location_longitude }}')
+                .openPopup();
+
+            // Initialize Vendor Map
+            vendorMap = L.map('vendor-location-map').setView([{{ vendor_last_location_latitude }}, {{ vendor_last_location_longitude }}], 16);
+
+            // Add tile layer for Vendor map
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(vendorMap);
+
+            // Add marker for Vendor location
+            var vendorMarker = L.marker([{{ vendor_last_location_latitude }}, {{ vendor_last_location_longitude }}])
+                .addTo(vendorMap)
+                .bindPopup('<b>Vendor API Location</b><br>Time: {{ vendor_last_location_time }}<br>Lat: {{ vendor_last_location_latitude }}<br>Lng: {{ vendor_last_location_longitude }}')
+                .openPopup();
+
+            // Style markers differently
+            utsMarker._icon.style.filter = 'hue-rotate(120deg)'; // Green marker
+            vendorMarker._icon.style.filter = 'hue-rotate(0deg)'; // Red marker
+        }
+
+        function handleDropdownEvents() {
+            // Handle dropdown open event
+            $('#vehicle_code').on('show.bs.select', function () {
+                {% if uts_last_location_time %}
+                    // Add class to move maps down
+                    $('.location-card').addClass('dropdown-open');
+
+                    // Invalidate map size after transition
+                    setTimeout(function() {
+                        if (utsMap) {
+                            utsMap.invalidateSize();
+                        }
+                        if (vendorMap) {
+                            vendorMap.invalidateSize();
+                        }
+                    }, 300);
+                {% endif %}
+            });
+
+            // Handle dropdown close event
+            $('#vehicle_code').on('hide.bs.select', function () {
+                {% if uts_last_location_time %}
+                    // Remove class to move maps back to original position
+                    $('.location-card').removeClass('dropdown-open');
+
+                    // Invalidate map size after transition
+                    setTimeout(function() {
+                        if (utsMap) {
+                            utsMap.invalidateSize();
+                        }
+                        if (vendorMap) {
+                            vendorMap.invalidateSize();
+                        }
+                    }, 300);
+                {% endif %}
+            });
+
+            // Handle dropdown click event (for additional support)
+            $('#vehicle_code').on('click', function() {
+                // Check if dropdown is about to open
+                if (!$(this).hasClass('show')) {
+                    {% if uts_last_location_time %}
+                        setTimeout(function() {
+                            $('.location-card').addClass('dropdown-open');
+
+                            setTimeout(function() {
+                                if (utsMap) {
+                                    utsMap.invalidateSize();
+                                }
+                                if (vendorMap) {
+                                    vendorMap.invalidateSize();
+                                }
+                            }, 300);
+                        }, 100);
+                    {% endif %}
+                }
+            });
+
+            // Handle click outside dropdown to close
+            $(document).on('click', function(event) {
+                if (!$(event.target).closest('.bootstrap-select').length) {
+                    {% if uts_last_location_time %}
+                        $('.location-card').removeClass('dropdown-open');
+
+                        setTimeout(function() {
+                            if (utsMap) {
+                                utsMap.invalidateSize();
+                            }
+                            if (vendorMap) {
+                                vendorMap.invalidateSize();
+                            }
+                        }, 300);
+                    {% endif %}
+                }
+            });
+        }
+    </script>
+{% endblock %}
+<!-- End Custom JS -->

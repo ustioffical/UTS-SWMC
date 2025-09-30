@@ -1,0 +1,1423 @@
+
+{% extends "master.html" %}
+{% load static %}
+
+{% block title %}Vehicle{% endblock %}
+
+<!-- Custom Plugins CSS -->
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/jquery.dataTables.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/sweetalert2.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select/bootstrap-select.min.css" %}">
+{% endblock %}
+<!--End Custom Plugins CSS -->
+
+{% block LeafletLink %}
+    <!--Google Key-->
+    <script type="text/javascript"
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDyN4NVgaHV6-AbuAdWqSBM07iay6gbfKc&libraries=places"></script>
+
+    <!--leaflet js library style link -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+          integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+          crossorigin=""/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.css' %}"/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.css' %}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+{% endblock %}
+
+{% block css %}
+    <style>
+        .default-map-js-height{
+            height: 725px;
+        }
+        .filter-companies .accordion-item {
+            border: 1px solid #e9edf1;
+        }
+        .main-file-sidebar .md-sidebar .md-sidebar-aside .common-sort-card .files-left-icons li a svg {
+            width: 24px;
+            height: 24px;
+        }
+        .border-tb-l-radius {
+            border-top-left-radius: 5px !important;
+            border-bottom-left-radius: 5px !important;
+        }
+        .main-file-sidebar .md-sidebar .md-sidebar-aside .common-sort-card .files-left-icons li {
+            margin-bottom: 10px;
+        }
+        .main-file-sidebar .md-sidebar .md-sidebar-aside .common-sort-card .files-left-icons li a {
+            padding: 6px 10px
+        }
+        .common-space {
+            justify-content: normal;
+        }
+        .course-box .card-body {
+            padding: 10px 15px;
+        }
+
+        /* Enhanced Filter Styles */
+        .filter-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .form-select {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            border: 1px solid #e9edf1;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .form-select:focus {
+            border-color: #7366ff;
+            box-shadow: 0 0 0 0.2rem rgba(115, 102, 255, 0.25);
+        }
+
+        .accordion-button:not(.collapsed) {
+            background-color: #f8f9fa;
+            color: #212529;
+            box-shadow: none;
+        }
+
+        .accordion-button:focus {
+            box-shadow: none;
+            border-color: #e9edf1;
+        }
+
+        .btn-hover-effect:hover {
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
+
+        .bootstrap-select .dropdown-toggle {
+            border: 1px solid #e9edf1;
+            border-radius: 5px;
+            padding: 0.47rem 0.75rem;
+        }
+
+        .status-badge {
+            padding: 0.5rem 0.8rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .badge-completed {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .badge-pending {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .badge-error {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-sync {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: white;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+        }
+
+        .btn-sync:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+            color: white;
+        }
+
+        .vehicle-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .status-indicator {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .table-responsive {
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .table th {
+            background-color: #f8f9fa;
+            border-top: none;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        /* Custom pagination styles */
+        .js-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 25px 0;
+        }
+
+        .js-pagination button {
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            background: white;
+            color: #495057;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .js-pagination button:hover:not(:disabled) {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .js-pagination button.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .js-pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .js-pagination .page-info {
+            margin: 0 15px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .entries-info {
+            text-align: center;
+            margin: 10px 0;
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .records-per-page {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .records-per-page select {
+            padding: 5px 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+
+        /* Modal Enhancement Styles */
+        .modal-dialog {
+            max-width: 600px;
+        }
+
+        .modal-lg {
+            max-width: 800px;
+        }
+
+        .btn-lg {
+            padding: 0.75rem 1.5rem;
+            font-size: 1.1rem;
+            border-radius: 0.5rem;
+        }
+
+        .btn-lg i {
+            font-size: 1.3rem;
+        }
+
+        .btn-lg div {
+            text-align: left;
+        }
+
+        .btn-lg small {
+            font-size: 0.875rem;
+            opacity: 0.8;
+        }
+
+    </style>
+{% endblock %}
+
+<!-- Header Page Hierarchy-->
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3>Vehicle Tracker GPRS Data Sync</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/index">
+                            <svg class="stroke-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                            </svg>
+                        </a></li>
+                        <li class="breadcrumb-item">Report</li>
+                        <li class="breadcrumb-item active">Vehicle-History</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+<!-- Header Page Hierarchy-->
+
+{% block content %}
+
+    <!-- Container-fluid starts-->
+    <div class="container-fluid main-companies">
+
+        <!-- Summary Cards -->
+        <div class="row widget-grid">
+            <div class="col-12">
+                <div class="row">
+                    <div class="col-xl-3 col-hr-6 col-sm-6">
+                        <div class="card widget-11 widget-hover ">
+                            <div class="card-body">
+                                <div class="common-align justify-content-start">
+                                    <div class="analytics-tread bg-light-primary">
+                                        <svg class="fill-primary">
+                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                                        </svg>
+                                    </div>
+                                    <div><span class="c-o-light">Total Vehicle</span><h4 class="counter" data-target="356">
+                                        {{total_vehicle_count}}</h4></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-hr-6 col-sm-6">
+                        <div class="card widget-11 widget-hover ">
+                            <div class="card-body">
+                                <div class="common-align justify-content-start">
+                                    <div class="analytics-tread bg-light-success">
+                                        <svg class="fill-success">
+                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                                        </svg>
+                                    </div>
+                                    <div><span class="c-o-light">Pending Vehicle</span><h4 class="counter" data-target="356">
+                                        {{pending_vehicle_count}}</h4></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-hr-6 col-sm-6">
+                        <div class="card widget-11 widget-hover ">
+                            <div class="card-body">
+                                <div class="common-align justify-content-start">
+                                    <div class="analytics-tread bg-light-danger">
+                                        <svg class="fill-danger">
+                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                                        </svg>
+                                    </div>
+                                    <div><span class="c-o-light">Completed Vehicle</span><h4 class="counter" data-target="356">
+                                        {{completed_vehicle_count}}</h4></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Vehicle Type Summary Cards -->
+        <div class="row general-widget-wrapper">
+            {% for data in count_by_vehicle_type %}
+                <div class="col-sm-2 col-xl-2 col-lg-2 box-col-2">
+                    <div class="card course-box">
+                        <div class="card-body">
+                            <div class="course-widget">
+                                <div class="course-icon info">
+                                    <svg class="fill-icon">
+                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0">
+                                        <span class="counter" id="summary_idle_vehicle_{{ forloop.counter }}">{{ data.count }}</span>
+                                    </h4>
+                                    <span class="f-light">{{ data.vehicle_code__vehicle_type }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <ul class="square-group">
+                            <li class="square-1 warning"></li>
+                            <li class="square-1 primary"></li>
+                            <li class="square-2 warning1"></li>
+                            <li class="square-3 danger"></li>
+                            <li class="square-4 light"></li>
+                            <li class="square-5 warning"></li>
+                            <li class="square-6 success"></li>
+                            <li class="square-7 success"></li>
+                        </ul>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Enhanced Filter Section with Accordion Layout -->
+        <div class="row">
+            <div class="col-xl-12 xl-6 box-col-12">
+                <div class="md-sidebar">
+                    <a class="btn btn-primary email-aside-toggle md-sidebar-toggle mb-3">
+                        <i class="fa fa-filter me-2"></i>Filters
+                    </a>
+                    <div class="md-sidebar-aside job-sidebar custom-scrollbar">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="header-top">
+                                    <h5><i class="fa fa-cogs me-2"></i>Vehicle Tracker GPRS Data Filters</h5>
+                                </div>
+                            </div>
+                            <div class="card-body filter-companies">
+                                <div class="accordion" id="accordionFilter">
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                                    data-bs-target="#collapseFilter" aria-expanded="true"
+                                                    aria-controls="collapseFilter">
+                                                <i class="fa fa-filter me-2"></i>Search & Filter Options
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                     stroke-linecap="round" stroke-linejoin="round"
+                                                     class="feather feather-chevron-down svg-color ms-auto">
+                                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                                </svg>
+                                            </button>
+                                        </h2>
+
+                                        <div class="accordion-collapse collapse show" id="collapseFilter">
+                                            <div class="accordion-body" style="min-width: 1000px; height: 250px;">
+                                                <form class="form form-horizontal" action="" method="post"
+                                                    accept-charset='utf-8' enctype="multipart/form-data" id="filterForm">
+                                                    {% csrf_token %}
+                                                    <!-- Horizontal Filter Controls -->
+                                                    <div class="d-flex flex-wrap gap-3 align-items-end mb-3">
+                                                        <!-- Vehicle Type Filter -->
+                                                        <div>
+                                                            <label class="form-label fw-bold mb-1">
+                                                                <i class="fa fa-car me-2"></i>Vehicle Type:
+                                                            </label>
+                                                            <select id="cmd_vehicle_type" name="cmd_vehicle_type"
+                                                                    class="selectpicker w-100" data-live-search="true"
+                                                                    data-size="4">
+                                                                <option value="NA" {% if selected_vehicle_type == 'NA' %}selected{% endif %}>
+                                                                    All Vehicle Types
+                                                                </option>
+                                                                {% for data in count_by_vehicle_type %}
+                                                                    <option value="{{ data.vehicle_code__vehicle_type }}"
+                                                                            {% if selected_vehicle_type == data.vehicle_code__vehicle_type %}selected{% endif %}>
+                                                                        {{ data.vehicle_code__vehicle_type }} ({{ data.count }})
+                                                                    </option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                        <!-- Vehicle List Filter -->
+                                                        <div>
+                                                            <label class="form-label fw-bold mb-1">
+                                                                <i class="fa fa-list me-2"></i>Vehicle Code:
+                                                            </label>
+                                                            <select id="cmd_vehicle_list" name="cmd_vehicle_list"
+                                                                    class="selectpicker w-100" data-live-search="true"
+                                                                    data-size="6">
+                                                                <option value="" {% if not selected_vehicle_list %}selected{% endif %}>
+                                                                    All Vehicles
+                                                                </option>
+                                                                {% for vehicle in vehicle_pitb_code %}
+                                                                    <option value="{{ vehicle.pitb_code }}"
+                                                                            {% if selected_vehicle_list == vehicle.pitb_code %}selected{% endif %}>
+                                                                        {{ vehicle.pitb_code }}
+                                                                    </option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                        <!-- Response Status Filter -->
+                                                        <div>
+                                                            <label class="form-label fw-bold mb-1">
+                                                                <i class="fa fa-info-circle me-2"></i>Status:
+                                                            </label>
+                                                            <select id="cmd_gprs_status" name="cmd_gprs_status"
+                                                                    class="selectpicker w-100" data-live-search="true">
+                                                                <option value="" {% if not selected_gprs_status %}selected{% endif %}>
+                                                                    All Statuses
+                                                                </option>
+                                                                {% for status in response_status %}
+                                                                    <option value="{{ status.process_status }}"
+                                                                            {% if selected_gprs_status == status.process_status %}selected{% endif %}>
+                                                                        {{ status.process_status }}
+                                                                    </option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                        <!-- Start Date Filter -->
+                                                        <div>
+                                                            <label class="form-label fw-bold mb-1">
+                                                                <i class="fa fa-calendar me-2"></i>Start Date:
+                                                            </label>
+                                                            <input class="form-control" type="date" id="start_date"
+                                                                name="start_date" value="{{ start_date|default:yesterday_date }}">
+                                                        </div>
+                                                        <!-- End Date Filter -->
+                                                        <div>
+                                                            <label class="form-label fw-bold mb-1">
+                                                                <i class="fa fa-calendar me-2"></i>End Date:
+                                                            </label>
+                                                            <input class="form-control" type="date" id="end_date"
+                                                                name="end_date" value="{{ end_date|default:yesterday_date }}">
+                                                        </div>
+                                                        <!-- Filter Action Buttons -->
+                                                        <div class="d-flex gap-2 mt-2">
+                                                            <button class="btn btn-success btn-hover-effect" type="submit">
+                                                                <i class="fa fa-search me-2"></i>Apply Filter
+                                                            </button>
+                                                            <a href="{% url 'SyncVehicleTrackerGPRS_RawData' %}"
+                                                            class="btn btn-warning btn-hover-effect">
+                                                                <i class="fa fa-refresh me-2"></i>Reset
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Filter Display -->
+        {% if selected_vehicle_type != 'NA' or selected_vehicle_list or selected_gprs_status %}
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <h6 class="mb-2"><i class="fa fa-filter me-2"></i>Active Filters:</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if selected_vehicle_type != 'NA' %}
+                                <span class="badge bg-primary">Type: {{ selected_vehicle_type }}</span>
+                            {% endif %}
+                            {% if selected_vehicle_list %}
+                                <span class="badge bg-info">Vehicle: {{ selected_vehicle_list }}</span>
+                            {% endif %}
+                            {% if selected_gprs_status %}
+                                <span class="badge bg-warning text-dark">Status: {{ selected_gprs_status }}</span>
+                            {% endif %}
+                            <a href="{% url 'SyncVehicleTrackerGPRS_RawData' %}"
+                               class="btn btn-outline-secondary btn-sm">
+                                <i class="fa fa-times me-1"></i>Clear All
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Enhanced Data Table Section -->
+        <div class="row candidate-wrapper">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <br><br>
+                        <h5 class="mb-0"><i class="fa fa-table me-2"></i>Vehicle Tracker GPRS Data</h5>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-secondary" id="total-records">
+                                Total Records: {{ data|length }}
+                            </span>
+                        </div>
+                    </div>
+                        <div class="table-responsive custom-scrollbar">
+                            <table class="table table-hover" id="vehicle-monitoring-table">
+                                <thead>
+                                        <tr>
+                                            <th width="5%"><i class="fa fa-hashtag me-1"></i>#</th>
+                                            <th width="15%"><i class="fa fa-car me-1"></i>Vehicle Code</th>
+                                            <th width="12%"><i class="fa fa-tag me-1"></i>Vehicle Type</th>
+                                            <th width="8%"><i class="fa fa-code me-1"></i>PITB Code</th>
+                                            <th width="10%"><i class="fa fa-calendar me-1"></i>Sync Date</th>
+                                            <th width="10%"><i class="fa fa-info-circle me-1"></i>Status</th>
+                                            <th width="10%"><i class="fa fa-download me-1"></i>Retrieve Record</th>
+                                            <th width="10%"><i class="fa fa-server me-1"></i>Vendor Record</th>
+                                            <th width="10%"><i class="fa fa-server me-1"></i>Difference</th>
+                                            <th width="10%"><i class="fa fa-road me-1"></i>Distance (km)</th>
+                                            <th width="10%"><i class="fa fa-clock-o me-1"></i>Working Hours</th>
+                                            <th width="10%"><i class="fa fa-cogs me-1"></i>Action</th>
+                                        </tr>
+                                    </thead>
+                                <tbody id="table-body">
+                                    {% if data %}
+                                        {% for item in data %}
+                                            <tr>
+                                                <th scope="row" class="xsm-text text-capitalize align-middle">{{ forloop.counter }}</th>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="position-relative me-3">
+                                                            <img class="vehicle-image"
+                                                                src="{% static 'assets/images/legend/vehicle/vehicle.png' %}"
+                                                                alt="vehicle">
+                                                            <div class="status-indicator
+                                                                {% if item.process_status == 'Completed' %}bg-success
+                                                                {% elif item.process_status == 'Pending' %}bg-warning
+                                                                {% else %}bg-danger{% endif %}">
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <a class="fw-bold text-decoration-none" href="#!">
+                                                                {{ item.vehicle_code_id|default:"N/A" }}
+                                                            </a>
+                                                            <br><small class="text-muted">Vehicle ID</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fa fa-truck text-primary me-2"></i>
+                                                        <span class="fw-medium">{{ item.vehicle_type|default:"Unknown" }}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {% if item.pitb_code %}
+                                                        <span class="badge bg-info">{{ item.pitb_code }}</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Not Assigned</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fa fa-calendar-o text-muted me-2"></i>
+                                                        <span>{{ item.veh_sch_date|date:"Y-m-d"|default:"N/A" }}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {% if item.process_status == 'Completed' %}
+                                                        <span class="status-badge badge-completed">
+                                                            <i class="fa fa-check me-1"></i>{{ item.process_status }}
+                                                        </span>
+                                                    {% elif item.process_status == 'Pending' %}
+                                                        <span class="status-badge badge-pending">
+                                                            <i class="fa fa-clock-o me-1"></i>{{ item.process_status }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="status-badge badge-error">
+                                                            <i class="fa fa-exclamation-triangle me-1"></i>{{ item.process_status }}
+                                                        </span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="fw-bold">{{ item.retrieve_record|default:"0" }}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="fw-bold">{{ item.vendor_record|default:"0" }}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="fw-bold">{{ item.difference|default:"0" }}</span>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fa fa-road text-info me-2"></i>
+                                                        <span class="fw-bold">{{ item.distance|floatformat:2|default:"0.00" }}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fa fa-clock-o text-warning me-2"></i>
+                                                        <span class="fw-bold">{{ item.working_hours|floatformat:2|default:"0.00" }}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex gap-1">
+                                                        <button class="btn btn-sync sync-btn"
+                                                                data-bs-toggle="tooltip"
+                                                                data-bs-placement="top"
+                                                                data-bs-title="Sync Vehicle Data"
+                                                                data-vehicle-id="{{ item.vehicle_code_id }}"
+                                                                data-date="{{ item.veh_sch_date|date:'Y-m-d' }}">
+                                                            <i class="fa fa-refresh"></i>
+                                                        </button>
+                                                        <button class="btn btn-primary push-pitb-btn"
+                                                            data-bs-toggle="tooltip"
+                                                            data-bs-placement="top"
+                                                            data-bs-title="Push to PITB"
+                                                            data-vehicle-id="{{ item.vehicle_code_id }}"
+                                                            data-date="{{ item.veh_sch_date|date:'Y-m-d' }}">
+                                                        <i class="fa fa-upload"></i>
+                                                    </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="9" class="text-center py-5">
+                                                <div class="text-muted">
+                                                    <i class="fa fa-search fa-3x mb-3"></i>
+                                                    <h5>No vehicle data available</h5>
+                                                    <p>Try adjusting your filters or check back later.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Push to PITB Selection Modal -->
+        <div class="modal fade" id="pushToPITBModal" tabindex="-1" aria-labelledby="pushToPITBModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="pushToPITBModalLabel">Push to PITB</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-4">
+                            <h6>How do you want to push to PITB?</h6>
+                            <p class="text-muted">Choose your preferred method to push the data</p>
+                        </div>
+                        <div class="d-grid gap-3">
+                            <button type="button" class="btn btn-primary btn-lg" id="autoSubmitBtn">
+                                <i class="fa fa-rocket me-2"></i>
+                                <div>
+                                    <strong>Auto</strong>
+                                    <br><small>Push with calculated data automatically</small>
+                                </div>
+                            </button>
+                            <button type="button" class="btn btn-warning btn-lg" id="manualSubmitBtn">
+                                <i class="fa fa-edit me-2"></i>
+                                <div>
+                                    <strong>Manual</strong>
+                                    <br><small>Review and edit data before pushing</small>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Push Form Modal -->
+        <div class="modal fade" id="manualPushModal" tabindex="-1" aria-labelledby="manualPushModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="manualPushModalLabel">Manual Push to PITB</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="manualPushForm">
+                        <div class="modal-body">
+                            <div class="row">
+                                <!-- Non-editable fields -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Vehicle Code</label>
+                                    <input type="text" class="form-control bg-light" id="manual_vehicle_code" readonly>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold d-flex justify-content-between align-items-center">
+                                        <span>VTMS Status</span>
+                                        <small class="text-muted">Click update to change</small>
+                                    </label>
+                                    <div class="d-flex gap-2">
+                                        <input type="text" class="form-control bg-light" id="manual_vtms_status" readonly>
+                                        <!-- small update button next to VTMS status -->
+                                        <button type="button" class="btn btn-info" id="openVtmsUpdateBtn" title="Update VTMS Status">
+                                            <i class="fa fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- Editable fields -->
+                               <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Timestamp <span class="text-danger">*</span></label>
+                                    <input type="datetime-local" class="form-control" id="manual_timestamp" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Speed (km/h) <span class="text-danger">*</span></label>
+                                    <input type="number" step="0.1" class="form-control" id="manual_speed" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Total Distance <span class="text-danger">*</span></label>
+                                    <input type="number" step="0.000001" class="form-control" id="manual_distance" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Working Minutes<span class="text-danger">*</span></label>
+                                    <input type="number" step="0.000001" class="form-control" id="manual_working_mint" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Longitude <span class="text-danger">*</span></label>
+                                    <input type="number" step="0.000001" class="form-control" id="manual_longitude" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Latitude <span class="text-danger">*</span></label>
+                                    <input type="number" step="0.000001" class="form-control" id="manual_latitude" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Vehicle Status <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="manual_vehicle_status" required>
+                                        <option value="">Select Status</option>
+                                        <option value="moving">Moving</option>
+                                        <option value="waiting">Waiting</option>
+                                        <option value="idle">Idle</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Engine Status <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="manual_engine_status" required>
+                                        <option value="">Select Status</option>
+                                        <option value="on">On</option>
+                                        <option value="off">Off</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fa fa-upload me-2"></i>Push to PITB
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Update VTMS Status Modal (moved outside manual form) -->
+        <div class="modal fade" id="updateVtmsModal" tabindex="-1" aria-labelledby="updateVtmsModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <form id="updateVtmsForm" method="post">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h6 class="modal-title" id="updateVtmsModalLabel">Update VTMS Status</h6>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-2">
+                                <label class="form-label fw-bold">VTMS Status</label>
+                                <select id="update_vtms_select" class="form-select" required>
+                                    <option value="">Select Status</option>
+                                    <option value="Working">Working</option>
+                                    <option value="Stop">Stop</option>
+                                </select>
+                            </div>
+                            <div class="text-muted small">
+                                This will update VTMS status for the vehicle and return you to manual push form.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary btn-sm" id="saveVtmsBtn"><i class="fa fa-save me-1"></i> Update</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- Container-fluid Ends-->
+
+{% endblock %}
+
+<!-- Plugins JS start-->
+{% block PluginsJS %}
+    <script src="{% static "assets/js/datatable/datatables/jquery.dataTables.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.select.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/select.bootstrap5.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/datatable.custom.js" %}"></script>
+    <script src="{% static "assets/js/sweet-alert/sweetalert.min.js" %}"></script>
+    <script src="{% static "assets/js/flat-pickr/flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/flat-pickr/custom-flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/select/bootstrap-select.min.js" %}"></script>
+    <script src="{% static "assets/js/tooltip-init.js" %}"></script>
+{% endblock %}
+<!-- Plugins JS Ends-->
+
+{% block LeafletJS %}
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+            integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+            crossorigin=""></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/GoogleMutant/Leaflet.GoogleMutant.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/measure/L.MeasuringTool.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.js' %}"></script>
+    <!-- Dependency to Leaflet Draw -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://npmcdn.com/leaflet.path.drag/src/Path.Drag.js"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Editable/Leaflet.Editable.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.geometryutil.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.snap.js" %}"></script>
+    <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+{% endblock %}
+
+<!-- Custom JS -->
+{% block CustomerJS %}
+<script>
+    $(document).ready(function () {
+        // Initialize selectpicker and tooltips
+        $('.selectpicker').selectpicker();
+
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Set default date values if they're empty
+        if (!$('#start_date').val()) {
+            $('#start_date').val('{{ yesterday_date }}');
+        }
+
+        if (!$('#end_date').val()) {
+            $('#end_date').val('{{ yesterday_date }}');
+        }
+
+        // Event delegation for sync buttons
+        $(document).on('click', '.sync-btn', function() {
+            var vehicleId = $(this).data('vehicle-id');
+            var date = $(this).data('date');
+            var button = $(this);
+
+            // Disable button and show loading indicator
+            button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+
+            // Make the sync request
+            $.ajax({
+                url: '{% url "SyncVehicleTrackerGPRS_RawData" %}',
+                type: 'POST',
+                data: {
+                    'vehicle_id': vehicleId,
+                    'selected_date': date,
+                    'time_from': '00:00',
+                    'time_to': '23:59',
+                    'sync_function': 'true',
+                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        Swal.fire({
+                            title: 'Success!',
+                            text: 'Vehicle data synchronized successfully.',
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        }).then(function() {
+                            // Refresh the page to show updated data
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: response.message || 'Failed to synchronize vehicle data.',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'An error occurred while synchronizing vehicle data.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                },
+                complete: function() {
+                    // Re-enable button and restore icon
+                    button.prop('disabled', false).html('<i class="fa fa-refresh"></i>');
+                }
+            });
+        });
+
+        // Vehicle type change handler - populate vehicle list based on selection
+        $("#cmd_vehicle_type").change(function() {
+            var selectedType = $(this).val();
+            var vehicleListSelect = $('#cmd_vehicle_list');
+
+            // If "All Vehicle Types" is selected, disable vehicle list selection
+            if (selectedType === "NA") {
+                vehicleListSelect.val('');
+                vehicleListSelect.selectpicker('refresh');
+                return;
+            }
+
+            // Show loading state
+            vehicleListSelect.empty().append('<option value="">Loading...</option>');
+            vehicleListSelect.selectpicker('refresh');
+
+            // Fetch vehicles of the selected type
+            $.ajax({
+                url: window.location.pathname,
+                type: 'GET',
+                data: {
+                    'cmd_vehicle_type': selectedType,
+                    'ajax': 'true'
+                },
+                success: function(response) {
+                    // Parse the HTML response to extract vehicle options
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(response, 'text/html');
+                    var options = $(doc).find('#cmd_vehicle_list option');
+
+                    // Update the vehicle list dropdown
+                    vehicleListSelect.empty().append('<option value="">All Vehicles</option>');
+                    options.each(function() {
+                        if ($(this).val()) {
+                            vehicleListSelect.append($(this).clone());
+                        }
+                    });
+
+                    vehicleListSelect.prop('disabled', false);
+                    vehicleListSelect.selectpicker('refresh');
+                },
+                error: function() {
+                    vehicleListSelect.empty().append('<option value="">All Vehicles</option>');
+                    vehicleListSelect.selectpicker('refresh');
+                }
+            });
+        });
+
+        // Form submission handler with validation
+        $('#filterForm').on('submit', function(e) {
+            e.preventDefault();
+
+            // Validate date range
+            var startDate = $('#start_date').val();
+            var endDate = $('#end_date').val();
+
+            if (startDate && endDate && startDate > endDate) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Invalid Date Range',
+                        text: 'Start date cannot be later than end date',
+                        icon: 'error'
+                    });
+                } else {
+                    alert('Start date cannot be later than end date');
+                }
+                return false;
+            }
+
+            // Show loading indicator
+            $('button[type="submit"]').prop('disabled', true)
+                                     .html('<i class="fa fa-spinner fa-spin me-2"></i>Applying Filter...');
+
+            // Submit the form normally (no AJAX)
+            this.submit();
+        });
+
+        // Reset form handler with confirmation
+        $('.btn-warning').click(function(e) {
+            if ($(this).attr('href')) {
+                e.preventDefault();
+
+                Swal.fire({
+                    title: 'Reset Filters',
+                    text: 'Are you sure you want to reset all filters?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, reset',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = $(this).attr('href');
+                    }
+                });
+            }
+        });
+
+        // Push to PITB button handler - Show selection modal
+        $(document).on('click', '.push-pitb-btn', function() {
+            var vehicleId = $(this).data('vehicle-id');
+            var date = $(this).data('date');
+
+            // Store vehicle data globally for use in modals
+            window.currentVehicleData = {
+                vehicleId: vehicleId,
+                date: date,
+                button: $(this)
+            };
+
+            // Show the selection modal
+            $('#pushToPITBModal').modal('show');
+        });
+
+        // Auto submit handler
+        $(document).on('click', '#autoSubmitBtn', function() {
+            $('#pushToPITBModal').modal('hide');
+
+            var vehicleData = window.currentVehicleData;
+            var button = vehicleData.button;
+
+            // Disable button and show loading indicator
+            button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+
+            // Show processing notification
+            Swal.fire({
+                title: 'Processing...',
+                html: `Pushing data for vehicle <b>${vehicleData.vehicleId}</b><br>
+                       Date: <b>${vehicleData.date}</b><br>
+                       Mode: <b>Auto</b><br>
+                       Please wait...`,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Call PushToPITB with Auto mode
+            pushToPITBAuto(vehicleData.vehicleId, vehicleData.date, button);
+        });
+
+        // Manual submit handler - Show manual form
+        $(document).on('click', '#manualSubmitBtn', function() {
+            $('#pushToPITBModal').modal('hide');
+
+            var vehicleData = window.currentVehicleData;
+
+            // Populate the manual form with basic vehicle data
+            $('#manual_vehicle_code').val(vehicleData.vehicleId);
+            // Fetch VTMS status via AJAX
+            $.ajax({
+                url: "{% url 'get_vehicle_vtms_status' %}",
+                type: "GET",
+                data: { vehicle_code: vehicleData.vehicleId },
+                success: function(response) {
+                    if (response.success) {
+                        $('#manual_vtms_status').val(response.vtms_status);
+                    } else {
+                        $('#manual_vtms_status').val('Unknown');
+                    }
+                },
+                error: function() {
+                    $('#manual_vtms_status').val('Error');
+                }
+            });
+            // Set current timestamp in datetime-local format (YYYY-MM-DDTHH:MM)
+            var now = new Date();
+            var localTimestamp = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+            $('#manual_timestamp').val(localTimestamp.toISOString().slice(0, 16));
+
+            // Set some default editable values
+            $('#manual_distance').val(0);
+            $('#manual_working_mint').val(0);
+            $('#manual_longitude').val('72.331848');
+            $('#manual_latitude').val('31.971868');
+            $('#manual_speed').val('0');
+            $('#manual_vehicle_status').val('idle');
+            $('#manual_engine_status').val('off');
+
+            // Show the manual form modal
+            $('#manualPushModal').modal('show');
+        });
+
+        // Open VTMS update modal from manual form
+        $(document).on('click', '#openVtmsUpdateBtn', function() {
+            var currentStatus = $('#manual_vtms_status').val() || '';
+            $('#update_vtms_select').val(currentStatus);
+            $('#updateVtmsModal').modal('show');
+        });
+
+        // Handle update VTMS form submit
+        $(document).on('submit', '#updateVtmsForm', function(e) {
+            e.preventDefault();
+            var vehicleCode = $('#manual_vehicle_code').val();
+            var newStatus = $('#update_vtms_select').val();
+            var btn = $('#saveVtmsBtn');
+            if (!vehicleCode) {
+                Swal.fire({ title: 'Error', text: 'Vehicle code missing', icon: 'error' });
+                return;
+            }
+            if (!newStatus) {
+                Swal.fire({ title: 'Error', text: 'Please select a status', icon: 'error' });
+                return;
+            }
+
+            // Disable button and show loader
+            btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i>Updating');
+
+            $.ajax({
+                url: "{% url 'update_vehicle_vtms_status' %}",
+                type: "POST",
+                data: {
+                    vehicle_code: vehicleCode,
+                    vtms_status: newStatus,
+                    csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').first().val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Update the readonly field in manual form
+                        $('#manual_vtms_status').val(response.vtms_status);
+                        $('#updateVtmsModal').modal('hide');
+                        Swal.fire({
+                            title: 'Success',
+                            text: 'VTMS status updated',
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: response.message || 'Failed to update VTMS status',
+                            icon: 'error'
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    var msg = 'An error occurred while updating VTMS status.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                    Swal.fire({ title: 'Error', text: msg, icon: 'error' });
+                },
+                complete: function() {
+                    btn.prop('disabled', false).html('<i class="fa fa-save me-1"></i> Update');
+                }
+            });
+        });
+
+        // Function to push data automatically (existing functionality)
+        function pushToPITBAuto(vehicleId, date, button) {
+            $.ajax({
+                url: '{% url "PushToPITB" %}',
+                type: 'POST',
+                data: {
+                    'vehicle_code': vehicleId,
+                    'selected_date': date,
+                    'submission_type': 'Auto',
+                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+                },
+                success: function(response) {
+                    if (response.status === 200) {
+                        Swal.fire({
+                            title: 'Success!',
+                            html: `<b>Data pushed to PITB successfully!</b><br>
+                                   Vehicle: ${vehicleId}<br>
+                                   Date: ${date}<br>
+                                   Mode: Auto<br>
+                                   Records Pushed: ${response.count}`,
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Warning',
+                            html: `API responded with status: ${response.status || 'Unknown'}<br>
+                                   ${response.api_response?.body || 'No response details available'}`,
+                            icon: 'warning',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    Swal.fire({
+                        title: 'Error!',
+                        html: `Failed to push data to PITB.<br>
+                              Error: ${error || 'Unknown error'}`,
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                },
+                complete: function() {
+                    // Re-enable button and restore icon
+                    button.prop('disabled', false).html('<i class="fa fa-upload"></i>');
+                },
+                timeout: 180000 // 3 minute timeout
+            });
+        }
+
+        // Manual form submission handler
+        $(document).on('submit', '#manualPushForm', function(e) {
+            e.preventDefault();
+
+            var vehicleData = window.currentVehicleData;
+            var button = vehicleData.button;
+
+            // Disable submit button
+            $(this).find('button[type="submit"]').prop('disabled', true)
+                                                .html('<i class="fa fa-spinner fa-spin me-2"></i>Pushing...');
+
+            // Close the modal
+            $('#manualPushModal').modal('hide');
+
+            // Show processing notification
+            Swal.fire({
+                title: 'Processing...',
+                html: `Pushing manual data for vehicle <b>${vehicleData.vehicleId}</b><br>
+                       Date: <b>${vehicleData.date}</b><br>
+                       Mode: <b>Manual</b><br>
+                       Please wait...`,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Convert datetime-local to the format expected by the backend
+            var timestampValue = $('#manual_timestamp').val();
+            var formattedTimestamp = timestampValue ? timestampValue.replace('T', ' ') : '';
+
+            // Prepare manual data (only editable fields)
+            var manualData = {
+                'vehicle_code': vehicleData.vehicleId,
+                'selected_date': vehicleData.date,
+                'submission_type': 'Manual',
+                'distance': $('#manual_distance').val(),
+                'working_minute': $('#manual_working_mint').val(),
+                'long': $('#manual_longitude').val(),
+                'lat': $('#manual_latitude').val(),
+                'speed': $('#manual_speed').val(),
+                'vehicle_status': $('#manual_vehicle_status').val(),
+                'engine_status': $('#manual_engine_status').val(),
+                'user_timestamp': formattedTimestamp, // Send the formatted timestamp
+                'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+            };
+
+            // Disable the original push button
+            button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+
+            // Make the manual push request
+            $.ajax({
+                url: '{% url "PushToPITB" %}',
+                type: 'POST',
+                data: manualData,
+                success: function(response) {
+                    if (response.status === 200) {
+                        Swal.fire({
+                            title: 'Success!',
+                            html: `<b>Manual data pushed to PITB successfully!</b><br>
+                                   Vehicle: ${vehicleData.vehicleId}<br>
+                                   Date: ${vehicleData.date}<br>
+                                   Mode: Manual<br>
+                                   Timestamp: ${formattedTimestamp}<br>
+                                   Records Pushed: ${response.count}`,
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Warning',
+                            html: `API responded with status: ${response.status || 'Unknown'}<br>
+                                   ${response.api_response?.body || 'No response details available'}`,
+                            icon: 'warning',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    Swal.fire({
+                        title: 'Error!',
+                        html: `Failed to push manual data to PITB.<br>
+                              Error: ${error || 'Unknown error'}`,
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                },
+                complete: function() {
+                    // Re-enable buttons
+                    button.prop('disabled', false).html('<i class="fa fa-upload"></i>');
+                    $('#manualPushForm').find('button[type="submit"]')
+                                        .prop('disabled', false)
+                                        .html('<i class="fa fa-upload me-2"></i>Push to PITB');
+                },
+                timeout: 180000 // 3 minute timeout
+            });
+        });
+
+        // Reset manual form when modal is hidden
+        $('#manualPushModal').on('hidden.bs.modal', function() {
+            $('#manualPushForm')[0].reset();
+            $('#manualPushForm').find('button[type="submit"]')
+                                .prop('disabled', false)
+                                .html('<i class="fa fa-upload me-2"></i>Push to PITB');
+        });
+
+        // Make pushToPITBAuto function globally available
+        window.pushToPITBAuto = function(vehicleId, date, button) {
+            $.ajax({
+                url: '{% url "PushToPITB" %}',
+                type: 'POST',
+                data: {
+                    'vehicle_code': vehicleId,
+                    'selected_date': date,
+                    'submission_type': 'Auto',
+                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+                },
+                success: function(response) {
+                    if (response.status === 200) {
+                        Swal.fire({
+                            title: 'Success!',
+                            html: `<b>Data pushed to PITB successfully!</b><br>
+                                   Vehicle: ${vehicleId}<br>
+                                   Date: ${date}<br>
+                                   Mode: Auto<br>
+                                   Records Pushed: ${response.count}`,
+                            icon: 'success',
+                            confirmButtonText: 'OK'
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Warning',
+                            html: `API responded with status: ${response.status || 'Unknown'}<br>
+                                   ${response.api_response?.body || 'No response details available'}`,
+                            icon: 'warning',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    Swal.fire({
+                        title: 'Error!',
+                        html: `Failed to push data to PITB.<br>
+                              Error: ${error || 'Unknown error'}`,
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                },
+                complete: function() {
+                    // Re-enable button and restore icon
+                    button.prop('disabled', false).html('<i class="fa fa-upload"></i>');
+                },
+                timeout: 180000 // 3 minute timeout
+            });
+        };
+    });
+</script>
+{% endblock %}

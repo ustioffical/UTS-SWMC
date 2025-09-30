@@ -1,0 +1,600 @@
+{% extends "master.html" %}
+{% load static %}
+
+{% block title %}Vehicle Threshold Management{% endblock %}
+
+<!-- Custom Plugins CSS -->
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/jquery.dataTables.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/sweetalert2.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select/bootstrap-select.min.css" %}">
+{% endblock %}
+
+{% block css %}
+    .table-editable {
+        background-color: #f8f9fa;
+    }
+
+    .table-editable input {
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 8px;
+        width: 100%;
+    }
+
+    .btn-assign {
+        background-color: #24695c;
+        border-color: #24695c;
+    }
+
+    .btn-assign:hover {
+        background-color: #1e5a4f;
+        border-color: #1e5a4f;
+    }
+
+    .threshold-card {
+        margin-bottom: 20px;
+    }
+
+    .action-buttons {
+        gap: 10px;
+    }
+
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .input-group-text {
+        background-color: #e9ecef;
+        border-color: #dee2e6;
+    }
+
+    #thresholdFormSection {
+        display: none;
+    }
+    .table-editable .input-group {
+    position: relative;
+    margin-bottom: 0.5rem;
+    /* Reserve space for error message */
+    padding-bottom: 18px;
+}
+.table-editable .distance-error,
+.table-editable .min-distance-error {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    font-size: 12px;
+    color: #dc3545;
+    /* Make sure error message doesn't push input */
+    min-height: 18px;
+    z-index: 2;
+    background: #f8f9fa;
+    padding-left: 2px;
+    pointer-events: none;
+}
+{% endblock %}
+
+<!-- Header Page Hierarchy-->
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3>Vehicle Threshold Management</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/index">
+                            <svg class="stroke-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                            </svg>
+                        </a></li>
+                        <li class="breadcrumb-item">Vehicle</li>
+                        <li class="breadcrumb-item active">Threshold Management</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <!-- Container-fluid starts-->
+    <div class="container-fluid">
+        <!-- Action Button Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card threshold-card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Threshold Configuration</h5>
+                            <div class="action-buttons d-flex">
+                                <button type="button" class="btn btn-assign btn-primary" id="assignThresholdBtn">
+                                    <i class="fa fa-plus me-2"></i>Assign Threshold
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Section (Initially Hidden) -->
+        <div class="row" id="thresholdFormSection">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Configure Vehicle Thresholds</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="thresholdForm">
+                            {% csrf_token %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-editable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Vehicle Type</th>
+                                            <th>Distance (KM)</th>
+                                            <th>Minimum Distance (KM)</th>
+                                            <th>Working Hours</th>
+                                            <th>Ignition Status</th>
+                                            <th>Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for vehicle_type in vehicle_types %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ vehicle_type }}</strong>
+                                                <input type="hidden" name="vehicle_type" value="{{ vehicle_type }}" class="vehicle-type-input">
+                                            </td>
+                                            <td>
+                                                <div class="input-group">
+                                                    <input type="number"
+                                                           class="form-control distance-input"
+                                                           step="0.1"
+                                                           min="0"
+                                                           placeholder="Enter distance"
+                                                           value="{% for threshold in existing_thresholds %}{% if threshold.vehicle_type == vehicle_type %}{{ threshold.distance|default:'' }}{% endif %}{% endfor %}">
+                                                    <span class="input-group-text">KM</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="input-group">
+                                                    <input type="number"
+                                                        class="form-control min-distance-input"
+                                                        step="0.1"
+                                                        min="0"
+                                                        placeholder="Enter min distance"
+                                                        value="{% for threshold in existing_thresholds %}{% if threshold.vehicle_type == vehicle_type %}{{ threshold.min_distance|default:'' }}{% endif %}{% endfor %}">
+                                                    <span class="input-group-text">KM</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="input-group">
+                                                    <input type="number"
+                                                           class="form-control working-hours-input"
+                                                           step="0.1"
+                                                           min="0"
+                                                           placeholder="Enter hours"
+                                                           value="{% for threshold in existing_thresholds %}{% if threshold.vehicle_type == vehicle_type %}{{ threshold.working_hours|default:'' }}{% endif %}{% endfor %}">
+                                                    <span class="input-group-text">Hrs</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <select class="form-select ignition-input">
+                                                    <option value="">Select Status</option>
+                                                    <option value="Yes" {% for threshold in existing_thresholds %}{% if threshold.vehicle_type == vehicle_type and threshold.ignition_status == 'Yes' %}selected{% endif %}{% endfor %}>Yes</option>
+                                                    <option value="No" {% for threshold in existing_thresholds %}{% if threshold.vehicle_type == vehicle_type and threshold.ignition_status == 'No' %}selected{% endif %}{% endfor %}>No</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <textarea class="form-control description-input"
+                                                         rows="2"
+                                                         placeholder="Enter description">{% for threshold in existing_thresholds %}{% if threshold.vehicle_type == vehicle_type %}{{ threshold.description|default:'' }}{% endif %}{% endfor %}</textarea>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3 d-flex gap-2">
+                                <button type="button" id="saveThresholdsBtn" class="btn btn-success">
+                                    <i class="fa fa-save me-2"></i>Save Thresholds
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="cancelFormBtn">
+                                    <i class="fa fa-times me-2"></i>Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Existing Thresholds Table -->
+        {% if existing_thresholds %}
+        <div class="row" id="existingThresholdsSection">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Current Vehicle Thresholds</h5>
+                            <span class="badge bg-primary">{{ existing_thresholds|length }} Configuration(s)</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Vehicle Type</th>
+                                        <th>Distance Threshold</th>
+                                        <th>Minimum Distance Threshold</th>
+                                        <th>Working Hours</th>
+                                        <th>Ignition Status</th>
+                                        <th>Description</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for threshold in existing_thresholds %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>
+                                            <strong>{{ threshold.vehicle_type }}</strong>
+                                        </td>
+                                        <td>
+                                            {% if threshold.distance %}
+                                                <span class="badge bg-info">{{ threshold.distance }} KM</span>
+                                            {% else %}
+                                                <span class="text-muted">0</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if threshold.min_distance %}
+                                                <span class="badge bg-info">{{ threshold.min_distance }} KM</span>
+                                            {% else %}
+                                                <span class="text-muted">0</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if threshold.working_hours %}
+                                                <span class="badge bg-warning">{{ threshold.working_hours }} Hours</span>
+                                            {% else %}
+                                                <span class="text-muted">Not Set</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if threshold.ignition_status %}
+                                                <span class="status-badge {% if threshold.ignition_status == 'Yes' %}bg-success{% else %}bg-danger{% endif %}">
+                                                    {{ threshold.ignition_status }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">Not Set</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if threshold.description %}
+                                                {{ threshold.description|truncatechars:50 }}
+                                            {% else %}
+                                                <span class="text-muted">No description</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-primary editThresholdBtn"
+                                                    data-threshold-id="{{ threshold.id }}"
+                                                    data-vehicle-type="{{ threshold.vehicle_type }}"
+                                                    title="Edit Threshold">
+                                                <i class="fa fa-edit"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="row" id="emptyState">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <div class="mb-4">
+                            <i class="fa fa-cogs fa-4x text-muted"></i>
+                        </div>
+                        <h5 class="text-muted">No Vehicle Thresholds Configured</h5>
+                        <p class="text-muted">Click "Assign Threshold" to configure thresholds for your vehicle types.</p>
+                        <button type="button" class="btn btn-assign btn-primary btn-lg" id="assignThresholdBtnEmpty">
+                            <i class="fa fa-plus me-2"></i>Assign Threshold
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <!-- Container-fluid Ends-->
+{% endblock %}
+
+<!-- Plugins JS start-->
+{% block PluginsJS %}
+    <script src="{% static "assets/js/datatable/datatables/jquery.dataTables.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.js" %}"></script>
+    <script src="{% static "assets/js/sweet-alert/sweetalert.min.js" %}"></script>
+    <script src="{% static "assets/js/tooltip-init.js" %}"></script>
+{% endblock %}
+
+<!-- Custom JS -->
+{% block CustomerJS %}
+    <script>
+        $(document).ready(function() {
+            let formVisible = false;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            // Handle Assign Threshold button click
+            $('#assignThresholdBtn, #assignThresholdBtnEmpty').on('click', function() {
+                if (!formVisible) {
+                    // Show the form
+                    $('#thresholdFormSection').slideDown(300);
+                    $('#assignThresholdBtn').html('<i class="fa fa-minus me-2"></i>Cancel Assignment');
+                    $('#assignThresholdBtn').removeClass('btn-primary').addClass('btn-secondary');
+                    formVisible = true;
+
+                    // Hide empty state if visible
+                    $('#emptyState').hide();
+
+                    // Scroll to form
+                    $('html, body').animate({
+                        scrollTop: $('#thresholdFormSection').offset().top - 100
+                    }, 500);
+                } else {
+                    // Hide the form
+                    hideForm();
+                }
+            });
+
+            // Handle Cancel button click
+            $('#cancelFormBtn').on('click', function() {
+                if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
+                    hideForm();
+                }
+            });
+
+            // Function to hide form and reset button
+            function hideForm() {
+                $('#thresholdFormSection').slideUp(300);
+                $('#assignThresholdBtn').html('<i class="fa fa-plus me-2"></i>Assign Threshold');
+                $('#assignThresholdBtn').removeClass('btn-secondary').addClass('btn-primary');
+                formVisible = false;
+
+                // Show empty state if no existing thresholds
+                {% if not existing_thresholds %}
+                    $('#emptyState').show();
+                {% endif %}
+
+                // Reset form
+                $('#thresholdForm')[0].reset();
+            }
+
+            // Handle Edit button click
+            $('.editThresholdBtn').on('click', function() {
+                const vehicleType = $(this).data('vehicle-type');
+
+                // Show form for editing
+                if (!formVisible) {
+                    $('#thresholdFormSection').slideDown(300);
+                    $('#assignThresholdBtn').html('<i class="fa fa-minus me-2"></i>Cancel Assignment');
+                    $('#assignThresholdBtn').removeClass('btn-primary').addClass('btn-secondary');
+                    formVisible = true;
+
+                    // Scroll to form and highlight the row being edited
+                    $('html, body').animate({
+                        scrollTop: $('#thresholdFormSection').offset().top - 100
+                    }, 500, function() {
+                        // Highlight the row being edited
+                        $(`input.vehicle-type-input[value="${vehicleType}"]`).closest('tr').addClass('table-warning');
+                        setTimeout(function() {
+                            $(`input.vehicle-type-input[value="${vehicleType}"]`).closest('tr').removeClass('table-warning');
+                        }, 2000);
+                    });
+                }
+            });
+//------------------------------------
+            // ...existing code...
+// Add inline validation for distance and min_distance fields
+    function validateRow(row) {
+        // Remove previous error messages
+        row.find('.distance-error, .min-distance-error').remove();
+
+        const distanceInput = row.find('.distance-input');
+        const minDistanceInput = row.find('.min-distance-input');
+        const distance = parseFloat(distanceInput.val());
+        const min_distance = parseFloat(minDistanceInput.val());
+
+        let hasError = false;
+
+        // If either field is filled, both must be filled
+        if ((distanceInput.val() && !minDistanceInput.val()) || (!distanceInput.val() && minDistanceInput.val())) {
+            if (!distanceInput.val()) {
+                distanceInput.after('<div class="text-danger distance-error" style="font-size:12px;">Please enter Distance.</div>');
+                hasError = true;
+            }
+            if (!minDistanceInput.val()) {
+                minDistanceInput.after('<div class="text-danger min-distance-error" style="font-size:12px;">Please enter Minimum Distance.</div>');
+                hasError = true;
+            }
+        }
+
+        // If both are filled, min_distance must be less than distance
+        if (!isNaN(distance) && !isNaN(min_distance)) {
+            if (min_distance >= distance) {
+                minDistanceInput.after('<div class="text-danger min-distance-error" style="font-size:12px;">Minimum Distance must be less than Distance.</div>');
+                hasError = true;
+            }
+        }
+
+        return !hasError;
+    }
+ // Validate on input for both fields
+    $('.table-editable').on('input', '.distance-input, .min-distance-input', function() {
+        const row = $(this).closest('tr');
+        validateRow(row);
+    });
+
+$('#saveThresholdsBtn').on('click', function() {
+    // --- Validation: min_distance must be less than distance ---
+    let isValid = true;
+    let errorMsg = "";
+    $('.table-editable tbody tr').each(function() {
+            if (!validateRow($(this))) {
+                allValid = false;
+            }
+        });
+    if (!isValid) {
+        alert('Please fix the errors in the form before saving.');
+        return false;
+    }
+    // Show loading state
+    let saveBtn = $(this);
+    saveBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-2"></i>Saving...');
+
+    // Collect ALL threshold data from the table, even empty rows
+    let thresholdData = [];
+    $('.table-editable tbody tr').each(function() {
+        const row = $(this);
+        const vehicleType = row.find('.vehicle-type-input').val();
+        const distance = row.find('.distance-input').val();
+        const min_distance = row.find('.min-distance-input').val(); // New field for minimum distance
+        const workingHours = row.find('.working-hours-input').val();
+        const ignition = row.find('.ignition-input').val();
+        const description = row.find('.description-input').val();
+
+        // Include all rows regardless of whether they have values
+        thresholdData.push({
+            vehicle_type: vehicleType,
+            distance: distance || null,
+            min_distance: min_distance || null, // Include minimum distance
+            working_hours: workingHours || null,
+            ignition: ignition || null,
+            description: description || null
+        });
+    });
+
+    // Add a fallback timeout to prevent hanging UI
+    let saveTimeout = setTimeout(function() {
+        console.log("Save operation timed out, resetting UI");
+        saveBtn.prop('disabled', false).html('<i class="fa fa-save me-2"></i>Save Thresholds');
+        alert("The operation is taking longer than expected. The data may have been saved, but please refresh the page to see updates.");
+    }, 10000); // 10 seconds timeout
+
+    // Send all threshold data via AJAX
+    $.ajax({
+        url: '{% url "CreateUpdateVehicleThreshold" %}',
+        type: 'POST',
+        data: {
+            csrfmiddlewaretoken: csrfToken,
+            thresholds: JSON.stringify(thresholdData)
+        },
+        success: function(response) {
+            // Clear the timeout since we got a response
+            clearTimeout(saveTimeout);
+
+            console.log("Server response:", response);
+
+            if (response.success) {
+                // Show simple alert first for immediate feedback
+                alert("Vehicle thresholds saved successfully!");
+
+                // Then try the fancy alert
+                try {
+                    swal({
+                        title: "Success!",
+                        text: "Vehicle thresholds saved successfully.",
+                        icon: "success",
+                        button: "OK"
+                    }).then(function() {
+                        window.location.reload();
+                    });
+                } catch (e) {
+                    console.error("SweetAlert error:", e);
+                    // Fallback if SweetAlert fails
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1000);
+                }
+            } else {
+                // Show error message
+                alert("Error: " + (response.message || "An error occurred while saving thresholds."));
+                saveBtn.prop('disabled', false).html('<i class="fa fa-save me-2"></i>Save Thresholds');
+            }
+        },
+        error: function(xhr, status, error) {
+            // Clear the timeout
+            clearTimeout(saveTimeout);
+
+            console.error("AJAX error:", status, error);
+            // Show error message
+            alert("Error: An error occurred while saving thresholds. Please try again.");
+            saveBtn.prop('disabled', false).html('<i class="fa fa-save me-2"></i>Save Thresholds');
+        },
+        complete: function() {
+            // Ensure the button is reset even if something went wrong
+            setTimeout(function() {
+                if (saveBtn.prop('disabled')) {
+                    saveBtn.prop('disabled', false).html('<i class="fa fa-save me-2"></i>Save Thresholds');
+                }
+            }, 2000);
+        }
+    });
+});
+//
+//------------------------------------
+            // Initialize tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+
+            // Auto-resize textareas
+            $('textarea').on('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+
+            // Number input validation
+            $('input[type="number"]').on('input', function() {
+                if ($(this).val() < 0) {
+                    $(this).val(0);
+                }
+            });
+
+            // Show success message if available
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                        swal({
+                            title: "Success!",
+                            text: "{{ message }}",
+                            icon: "success",
+                            button: "OK"
+                        });
+                    {% elif message.tags == 'error' %}
+                        swal({
+                            title: "Error!",
+                            text: "{{ message }}",
+                            icon: "error",
+                            button: "OK"
+                        });
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        });
+    </script>
+{% endblock %}

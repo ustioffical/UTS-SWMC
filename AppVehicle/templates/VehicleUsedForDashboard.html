@@ -1,0 +1,111 @@
+{% extends "master.html" %}
+{% load static %}
+{% block title %}Vehicle Used For Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <br>
+    <h2>Vehicle Used For Dashboard</h2>
+    <br>
+    <!-- Add Form -->
+    <form method="post" class="row g-3 mb-4">
+        {% csrf_token %}
+        <div class="col-auto">
+            <input type="text" name="vehicle_used_for" class="form-control" placeholder="Enter New Vehicle Used For" required>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary" id="add-btn">
+                <span id="btn-text">Add</span>
+                <span id="btn-spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+            </button>
+        </div>
+    </form>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Records Table -->
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Used For</th>
+                <th>Created At</th>
+                <th>Created By</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in used_for_list %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.vehicle_used_for }}</td>
+                <td>{{ item.created_at|date:"Y-m-d H:i" }}</td>
+                <td>{{ item.created_by|default:"-" }}</td>
+                <td>
+                    <!-- Delete Form -->
+                    <form method="post" class="d-inline delete-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="delete_id" value="{{ item.id }}">
+                        <button type="submit" class="btn btn-danger btn-sm delete-btn">
+                            <span class="delete-text">Delete</span>
+                            <span class="delete-spinner spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No records found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block CustomerJS %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Form
+    const addForm = document.querySelector('form:not(.delete-form)');
+    if (addForm) {
+        addForm.addEventListener('submit', function() {
+            const btn = document.getElementById('add-btn');
+            const btnText = document.getElementById('btn-text');
+            const btnSpinner = document.getElementById('btn-spinner');
+            if (btn && !btn.disabled) {
+                btn.disabled = true;
+                btnText.textContent = 'Adding...';
+                btnSpinner.classList.remove('d-none');
+            }
+        });
+    }
+
+    // Delete Forms
+    const deleteForms = document.querySelectorAll('.delete-form');
+    deleteForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            // Optional confirmation popup
+            if (!confirm("Are you sure you want to delete this record?")) {
+                e.preventDefault();
+                return;
+            }
+
+            const btn = form.querySelector('.delete-btn');
+            const text = form.querySelector('.delete-text');
+            const spinner = form.querySelector('.delete-spinner');
+            if (btn && !btn.disabled) {
+                btn.disabled = true;
+                text.textContent = 'Deleting...';
+                spinner.classList.remove('d-none');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Single Vehicle Info</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        .vehicle-img {
+            width: 120px;
+            height: 80px;
+            object-fit: contain;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.2);
+            margin-right: 25px;
+            padding: 10px;
+        }
+        .vehicle-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .vehicle-subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        .status-badge {
+            background: #4CAF50;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-left: 15px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .section-title {
+            font-size: 1.4em;
+            margin: 40px 0 20px 0;
+            font-weight: bold;
+            color: #333;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .info-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        .info-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .info-label {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .info-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .icon {
+            margin-right: 8px;
+            font-size: 1.1em;
+        }
+        .engine-battery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #007bff, #28a745);
+        }
+        .metric-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            color: #007bff;
+        }
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .metric-label {
+            color: #666;
+            font-size: 0.95em;
+        }
+        .fuel-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header Section -->
+    <div class="header">
+        {% if vehicle_icon %}
+            <img src="{{ vehicle_icon.url }}" alt="Vehicle Icon" class="vehicle-img">
+        {% else %}
+            <img src="/static/default_vehicle.png" alt="Vehicle Icon" class="vehicle-img">
+        {% endif %}
+        <div>
+            <div class="vehicle-title">
+                {{ vehicle.make|default:"-" }} {{ vehicle.model|default:"-" }} {{ vehicle.vehicle_type|default:"-" }}
+            </div>
+            <div class="vehicle-subtitle">
+                <span class="icon">🔢</span>Vehicle Code: {{ vehicle.vehicle_code|default:"-" }}
+                <span class="icon" style="margin-left:20px;">📋</span>Registration: {{ vehicle.register_no|default:"-" }}
+                {% if vehicle.status %}
+                    <span class="status-badge">{{ vehicle.status }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicle Information -->
+    <div class="section-title">🚗 Vehicle Information</div>
+    <div class="info-grid">
+        <div class="info-box">
+            <div class="info-label"><span class="icon">🔢</span>Vehicle Code</div>
+            <div class="info-value">{{ vehicle.vehicle_code|default:"-" }}</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label"><span class="icon">📋</span>Registration Number</div>
+            <div class="info-value">{{ vehicle.register_no|default:"-" }}</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label"><span class="icon">🏭</span>Vendor Code</div>
+            <div class="info-value">{{ vehicle.vendor_code|default:"-" }}</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label"><span class="icon">📅</span>Year</div>
+            <div class="info-value">{{ vehicle.year|default:"-" }}</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label"><span class="icon">🔧</span>Engine Number</div>
+            <div class="info-value">{{ vehicle.engine_no|default:"-" }}</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label"><span class="icon">🏗️</span>Chassis Number</div>
+            <div class="info-value">{{ vehicle.chasis_no|default:"-" }}</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label"><span class="icon">🎨</span>Color</div>
+            <div class="info-value">{{ vehicle.color|default:"-" }}</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label"><span class="icon">📅</span>Date Installed</div>
+            <div class="info-value">{{ vehicle.date_installed|date:"d-M-Y"|default:"-" }}</div>
+        </div>
+    </div>
+
+    <!-- Engine & Battery Metrics -->
+    <div class="section-title">🔋 Engine & Battery Status</div>
+    <div class="engine-battery-grid">
+        <div class="metric-card">
+            <div class="metric-icon">🌡️</div>
+            <div class="metric-value">{{ vehicle.engin_temp|default:"-" }}</div>
+            <div class="metric-label">Engine Temperature</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon">⏱️</div>
+            <div class="metric-value">{{ vehicle.engin_hours|default:"-" }}</div>
+            <div class="metric-label">Engine Hours</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon">🔋</div>
+            <div class="metric-value">{{ vehicle.ext_bat_voltage|default:"-" }}</div>
+            <div class="metric-label">External Battery Voltage</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon">🔋</div>
+            <div class="metric-value">{{ vehicle.int_bat_voltage|default:"-" }}</div>
+            <div class="metric-label">Internal Battery Voltage</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon">📏</div>
+            <div class="metric-value">{{ vehicle.mileage_cur_value|default:"-" }}</div>
+            <div class="metric-label">Mileage Current Value</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon">⏰</div>
+            <div class="metric-value">{{ vehicle.veh_status_chg_sec|default:"-" }}</div>
+            <div class="metric-label">Status Change (sec)</div>
+        </div>
+    </div>
+
+    <!-- Fuel Management -->
+    <div class="section-title">⛽ Fuel Management</div>
+    <div class="fuel-grid">
+        <div class="info-box">
+            <div class="info-label"><span class="icon">⛽</span>Fuel Level</div>
+            <div class="info-value">{{ vehicle.fuel_level|default:"-" }}</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label"><span class="icon">📊</span>Fuel Consumed</div>
+            <div class="info-value">{{ vehicle.fuel_consumed|default:"-" }}</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label"><span class="icon">⛽</span>Fuel Type</div>
+            <div class="info-value">{{ vehicle.fuel_type|default:"-" }}</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label"><span class="icon">📈</span>Fuel Average</div>
+            <div class="info-value">{{ vehicle.fuel_average|default:"-" }}</div>
+        </div>
+    </div>
+
+    <!-- Additional Information -->
+    <div class="section-title">ℹ️ Additional Information</div>
+    <div class="info-grid">
+        <div class="info-box">
+            <div class="info-label"><span class="icon">🚘</span>Vehicle Used For</div>
+            <div class="info-value">{{vehicle_used_for}}</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label"><span class="icon">🏢</span>PITB Code</div>
+            <div class="info-value">{{ vehicle.pitb_code|default:"-" }}</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label"><span class="icon">👤</span>Created By</div>
+            <div class="info-value">{{ vehicle.created_by|default:"-" }}</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label"><span class="icon">📅</span>Created At</div>
+            <div class="info-value">{{ vehicle.created_at|date:"d-M-Y H:i"|default:"-" }}</div>
+        </div>
+        <div class="info-box">
+            <div class="info-label"><span class="icon">🔄</span>Last Updated</div>
+            <div class="info-value">{{ vehicle.updated_at|date:"d-M-Y H:i"|default:"-" }}</div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

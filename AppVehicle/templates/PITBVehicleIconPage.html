@@ -1,0 +1,156 @@
+{% extends "master.html" %}
+{% load static %}
+
+{% block title %}PITB Vehicle Icons{% endblock %}
+
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/jquery.dataTables.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/select.bootstrap5.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/buttons.bootstrap5.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/responsive.bootstrap5.css' %}">
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="container-fluid">
+    <div class="page-title">
+         <div class="row">
+              <div class="col-sm-6">
+                   <h3>PITB Vehicle Icons</h3>
+              </div>
+              <div class="col-sm-6">
+                   <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/index">
+                            <svg class="stroke-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                            </svg>
+                        </a></li>
+                        <li class="breadcrumb-item">PITB</li>
+                        <li class="breadcrumb-item active">Vehicle Icons</li>
+                   </ol>
+              </div>
+         </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Container-fluid starts-->
+<div class="container-fluid">
+    <div class="row">
+         <div class="col-sm-12">
+              <div class="card">
+                   <div class="card-header pb-0">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5>PITB Vehicle Icons List</h5>
+                            </div>
+                            <div class="col-md-4 text-end mb-2">
+                                <a href="{% url 'PostPITBVehicleIcon' %}" class="btn btn-success">
+                                    Post PITB Icon
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                   <div class="card-body">
+                         <div class="table-responsive">
+                             <table id="pitb-vehicle-icon-table" class="display table table-bordered">
+                                  <thead>
+                                      <tr>
+                                          <th>#</th>
+                                          <th>Vehicle Type</th>
+                                          <th>Icon</th>
+                                          <th>Status</th>
+                                          <th>Created At</th>
+                                          <th>Created By</th>
+                                          <th>Updated At</th>
+                                          <th>Updated By</th>
+                                          <th>Actions</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody>
+                                      {% if vehicle_icons %}
+                                          {% for icon in vehicle_icons %}
+                                          <tr>
+                                              <td>{{ forloop.counter }}</td>
+                                              <td>{{ icon.vehicle_type }}</td>
+                                              <td>
+                                                  {% if icon.vehicle_icon %}
+                                                      <img src="{{ icon.vehicle_icon.url }}" alt="{{ icon.vehicle_type }}" style="max-width: 100px; height: auto;">
+                                                  {% else %}
+                                                      No image
+                                                  {% endif %}
+                                              </td>
+                                              <td>
+                                                    {{ icon.status }}
+                                                </td>
+                                              <td>{{ icon.created_at|date:"Y-m-d H:i" }}</td>
+                                              <td>{{ icon.created_by|default:"--" }}</td>
+                                              <td>
+                                                  {% if icon.updated_at %}
+                                                      {{ icon.updated_at|date:"Y-m-d H:i" }}
+                                                  {% else %}
+                                                      --
+                                                  {% endif %}
+                                              </td>
+                                              <td>{{ icon.updated_by|default:"--" }}</td>
+                                              <td>
+                                                <button class="btn btn-primary btn-sm" onclick="editIcon({{ icon.id }})">Edit</button>
+                                                <button class="btn btn-danger btn-sm" 
+                                                        hx-post="{% url 'block_vehicle_icon' icon.id %}" 
+                                                        hx-swap="beforeend"
+                                                        hx-target="body">
+                                                    Block
+                                                </button>
+                                              </td>
+                                          </tr>
+                                          {% endfor %}
+                                      {% else %}
+                                          <tr>
+                                              <td colspan="9" class="text-center">No vehicle icons found</td>
+                                          </tr>
+                                      {% endif %}
+                                  </tbody>
+                             </table>
+                         </div>
+                   </div>
+              </div>
+         </div>
+    </div>
+</div>
+<!-- Container-fluid Ends-->
+{% endblock %}
+
+{% block PluginsJS %}
+    <script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'assets/js/datatable/datatables/dataTables.js' %}"></script>
+    <script src="{% static 'assets/js/datatable/datatables/dataTables.select.js' %}"></script>
+    <script src="{% static 'assets/js/datatable/datatables/select.bootstrap5.js' %}"></script>
+    <script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
+    <script src="{% static 'assets/js/datatable/datatable-extension/dataTables.buttons.js' %}"></script>
+    <script src="{% static 'assets/js/datatable/datatable-extension/buttons.bootstrap5.js' %}"></script>
+    <script src="{% static 'assets/js/datatable/datatable-extension/dataTables.responsive.js' %}"></script>
+    <script src="{% static 'assets/js/datatable/datatable-extension/responsive.bootstrap5.js' %}"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+{% endblock %}
+
+{% block CustomerJS %}
+<script>
+    $(document).ready(function() {
+        $('#pitb-vehicle-icon-table').DataTable({
+            responsive: true,
+            paging: true,
+            searching: true,
+            info: true,
+            dom: '<"row"<"col-sm-6"B><"col-sm-6">>rt',
+            buttons: [
+                'csv', 'excel', 'pdf', 'print'
+            ]
+        });
+    });
+    
+    function editIcon(iconId) {
+    window.location.href = "{% url 'EditPITBVehicleIcon' 0 %}".replace('0', iconId);
+}
+    
+</script>
+{% endblock %}

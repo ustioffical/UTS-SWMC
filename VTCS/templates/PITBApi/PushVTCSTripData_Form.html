@@ -1,0 +1,446 @@
+{% extends "master.html" %}
+{% load static %}
+{% load urlify %}
+{% load humanize %}
+
+{% block title %}VTCS Trip Data{% endblock %}
+
+<!-- Custom Plugins CSS -->
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/jquery.dataTables.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/sweetalert2.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select/bootstrap-select.min.css" %}">
+    {#    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />#}
+    {#    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2/dist/tailwind.min.css" rel="stylesheet" type="text/css" />#}
+
+
+    <style>
+        /* Custom styles for form inputs */
+        form select, form input, form textarea {
+            display: block;
+            width: 100%;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #212529;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            margin-top: 5px;
+        }
+
+        form select:focus, form input:focus, form textarea:focus {
+            border-color: #86b7fe;
+            outline: 0;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            font-weight: 500;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .invalid-feedback {
+            color: #dc3545;
+            margin-top: 0.25rem;
+        }
+
+        .form-control {
+            width: 100%;
+        }
+
+        /* Enhanced File input styling with better spacing */
+        input[type="file"] {
+            position: relative;
+            color: transparent;
+            padding: 0.375rem 0;
+            margin-top: 10px; /* Added more top margin */
+        }
+
+        input[type="file"]::file-selector-button {
+            visibility: visible;
+            position: relative;
+            cursor: pointer;
+            background-color: #4361ee;
+            color: white;
+            padding: 8px 16px;
+            margin: 0 10px 0 10px; /* Added left and right margin */
+            border: none;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        input[type="file"]:hover::file-selector-button {
+            background-color: #3a56d4;
+        }
+
+        input[type="file"]:active::file-selector-button {
+            background-color: #2a3eb1;
+        }
+
+        /* File input text color after selecting a file */
+        input[type="file"]:not(:focus):not(:placeholder-shown) {
+            color: #212529;
+        }
+
+        /* Required fields */
+        .required label:after {
+            content: " *";
+            color: #dc3545;
+        }
+
+        .form-container {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+        }
+
+        .card {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 1rem;
+        }
+
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            background-color: #f8f9fa;
+        }
+
+        .info-icon {
+            display: inline-block;
+            color: #6c757d;
+            cursor: help;
+            margin-left: 5px;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .info-icon[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            min-width: 150px;
+        }
+
+    </style>
+{% endblock %}
+<!--End Custom Plugins CSS -->
+
+{% block content %}
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Post VTCS Trip Data</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if messages %}
+                            <div class="alert-container mb-4">
+                                {% for message in messages %}
+                                    <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %} alert-dismissible fade show"
+                                         role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                                aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <form method="post" enctype="multipart/form-data" class="needs-validation">
+                            {% csrf_token %}
+
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="{{ form.vehicle_code.id_for_label }}" class="form-label fw-bolder">Vehicle
+                                            Code<span class="info-icon"
+                                                      data-tooltip="Vehicle number associated with the trip. This should be the unique identifier for the vehicle."><i
+                                                    class="fas fa-info-circle"></i></span></label>>
+                                        <select name="vehicle_code" id="{{ form.vehicle_code.id_for_label }}"
+                                                class="selectpicker form-control"
+                                                data-live-search="true"
+                                                data-size="10"
+                                                required>
+                                            <option value="">Select Vehicle</option>
+                                            {% for vehicle in vehicles_data_list %}
+                                                <option value="{{ vehicle.vehicle_code }}"
+                                                        {% if form.vehicle_code.value == vehicle.vehicle_code|stringformat:'s' %}selected{% endif %}>
+                                                    {{ vehicle.register_no }}-{{ vehicle.pitb_code }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+
+                                        {% if form.vehicle_code.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.vehicle_code.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="{{ form.slip_id.id_for_label }}" class="mb-0">Slip ID<span
+                                                class="info-icon"
+                                                data-tooltip="Unique identifier for this trip's slip/receipt."><i
+                                                class="fas fa-info-circle"></i></span></label>
+                                        {{ form.slip_id }}
+                                        {% if form.slip_id.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.slip_id.errors }}</div>
+                                        {% endif %}
+
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="{{ form.before_weight.id_for_label }}" class="mb-0">Before Weight
+                                            (kg)<span class="info-icon"
+                                                      data-tooltip="Weight of the vehicle (in kilograms) before unloading the garbage. This is mandatory."><i
+                                                    class="fas fa-info-circle"></i></span></label>
+                                        {{ form.before_weight }}
+                                        {% if form.before_weight.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.before_weight.errors }}</div>
+                                        {% endif %}
+
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="{{ form.after_weight.id_for_label }}" class="mb-0">After Weight (kg)<span
+                                                class="info-icon"
+                                                data-tooltip="Weight of the vehicle (in kilograms) after unloading the garbage at the dumping site. This is mandatory."><i
+                                                class="fas fa-info-circle"></i></span></label>
+                                        {{ form.after_weight }}
+                                        {% if form.after_weight.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.after_weight.errors }}</div>
+                                        {% endif %}
+
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="row mb-3">
+
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.trip_date.id_for_label }}" class="mb-0">Trip Date<span
+                                                class="info-icon" data-tooltip="Trip date of vehicle"><i
+                                                class="fas fa-info-circle"></i></span></label>
+                                        <input type="date" name="trip_date" id="{{ form.trip_date.id_for_label }}"
+                                               class="form-control"
+                                               value="{{ form.trip_date.value|date:'Y-m-d'|default:'' }}">
+                                        {% if form.trip_date.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.trip_date.errors }}</div>
+                                        {% endif %}
+
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.time_in.id_for_label }}" class="mb-0">Time In<span
+                                                class="info-icon"
+                                                data-tooltip="The timestamp when the vehicle entered in dumping site., formatted as 'YYYY-MM-DD HH:MM:SS'. This is required."><i
+                                                class="fas fa-info-circle"></i></span></label>
+                                        <input type="datetime-local" name="time_in" id="{{ form.time_in.id_for_label }}"
+                                               class="form-control"
+                                               value="{{ form.time_in.value|date:'Y-m-d\TH:i'|default:'' }}">
+                                        {% if form.time_in.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.time_in.errors }}</div>
+                                        {% endif %}
+
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.time_out.id_for_label }}" class="mb-0">Time Out<span
+                                                class="info-icon"
+                                                data-tooltip="The timestamp when the vehicle come out from dumping site, formatted as 'YYYY-MM-DD HH:MM:SS'. This is required."><i
+                                                class="fas fa-info-circle"></i></span></label>
+                                        <input type="datetime-local" name="time_out"
+                                               id="{{ form.time_out.id_for_label }}" class="form-control"
+                                               value="{{ form.time_out.value|date:'Y-m-d\TH:i'|default:'' }}">
+                                        {% if form.time_out.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.time_out.errors }}</div>
+                                        {% endif %}
+
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- This one  -->
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="{{ form.site_name.id_for_label }}" class="mb-0">Site Name<span class="info-icon"
+                                                                                                      data-tooltip="Dumping site name"><i
+                                                class="fas fa-info-circle"></i></span></label>
+                                        <input type="text" name="site_name" id="{{ form.site_name.id_for_label }}"
+                                               value="{{ dumping_site_list.name }}" class="form-control" readonly>
+
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="{{ form.site_id.id_for_label }}" class="mb-0">Site ID<span class="info-icon"
+                                                                                                  data-tooltip="Landfil site id provided for PITB. You can take this id from url against your landfil site https://elgcd-ms.punjab.gov.pk/php/landfill.php?token=yourtoken. This is required."><i
+                                                class="fas fa-info-circle"></i></span></label>
+                                        <input type="text" name="site_id" id="{{ form.site_id.id_for_label }}"
+                                               value="{{ code_number }}" class="form-control" readonly>
+
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="{{ form.lat.id_for_label }}" class="mb-0">Latitude<span class="info-icon"
+                                                                                               data-tooltip="Latitude coordinate of dumping site where waste is dumped."><i
+                                                class="fas fa-info-circle"></i></span></label>
+                                        <input type="text" name="lat" id="{{ form.lat.id_for_label }}"
+                                               value="{{ latitude }}" class="form-control" readonly>
+
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="{{ form.long.id_for_label }}" class="mb-0">Longitude<span class="info-icon"
+                                                                                                 data-tooltip="Longitude coordinate of dumping site where waste is dumped."><i
+                                                class="fas fa-info-circle"></i></span></label>
+                                        <input type="text" name="long" id="{{ form.long.id_for_label }}"
+                                               value="{{ longitude }}" class="form-control" readonly>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-sm-12 col-xl-3 col-md-6 col-lg-6 box-col-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.before_picture.id_for_label }}" class="mb-0">Before Picture<span
+                                                class="info-icon"
+                                                data-tooltip="The picture of the vehicle taken before the unloading started. This must be uploaded."><i
+                                                class="fas fa-info-circle"></i></span></label>
+                                        {{ form.before_picture }}
+                                        {% if form.before_picture.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.before_picture.errors }}</div>
+                                        {% endif %}
+                                        <!-- Helper image -->
+                                        <div class="helper-image mt-2">
+                                            <img src="{% static 'assets/images/helper_images/before_weight.jpg' %}"
+                                                 alt="Example before picture" class="img-fluid rounded border"
+                                                 style="max-height: 150px;">
+
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <div class="col-sm-12 col-xl-3 col-md-6 col-lg-6 box-col-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.after_picture.id_for_label }}" class="mb-0">After Picture<span
+                                                class="info-icon"
+                                                data-tooltip="The picture of the vehicle taken after completely unloading the vehicle ended. This must be uploaded."><i
+                                                class="fas fa-info-circle"></i></span></label>
+                                        {{ form.after_picture }}
+                                        {% if form.after_picture.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.after_picture.errors }}</div>
+                                        {% endif %}
+                                        <!-- Helper image -->
+                                        <div class="helper-image mt-2">
+                                            <img src="{% static 'assets/images/helper_images/after_weight.jpg' %}"
+                                                 alt="Example before picture" class="img-fluid rounded border"
+                                                 style="max-height: 150px;">
+
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <div class="col-sm-12 col-xl-3 col-md-6 col-lg-6 box-col-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.roof_before_picture.id_for_label }}" class="mb-0">Roof Before
+                                            Picture<span class="info-icon"
+                                                         data-tooltip="Vehicle's roof taken before the trip started."><i
+                                                    class="fas fa-info-circle"></i></span></label>
+                                        {{ form.roof_before_picture }}
+                                        {% if form.roof_before_picture.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.roof_before_picture.errors }}</div>
+                                        {% endif %}
+                                        <!-- Helper image -->
+                                        <div class="helper-image mt-2">
+                                            <img src="{% static 'assets/images/helper_images/roof_before.jpg' %}"
+                                                 alt="Example before picture" class="img-fluid rounded border"
+                                                 style="max-height: 150px;">
+
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <div class="col-sm-12 col-xl-3 col-md-6 col-lg-6 box-col-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.roof_after_picture.id_for_label }}" class="mb-0">Roof After Picture<span
+                                                class="info-icon"
+                                                data-tooltip="Vehicle's roof taken after the trip ended"><i
+                                                class="fas fa-info-circle"></i></span></label>
+                                        {{ form.roof_after_picture }}
+                                        {% if form.roof_after_picture.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.roof_after_picture.errors }}</div>
+                                        {% endif %}
+                                        <!-- Helper image -->
+                                        <div class="helper-image mt-2">
+                                            <img src="{% static 'assets/images/helper_images/roof_after.jpg' %}"
+                                                 alt="Example before picture" class="img-fluid rounded border"
+                                                 style="max-height: 150px;">
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="mt-4 pull-right">
+                                <button type="submit" name="action" value="save" class="btn btn-primary">Save in
+                                    System
+                                </button>
+                                <button type="submit" name="action" value="push" class="btn btn-success">Push to PITB
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block PluginsJS %}
+    <script src="{% static "assets/js/datatable/datatables/jquery.dataTables.min.js" %}"></script>
+    <script src="{% static "assets/js/sweet-alert/sweetalert2.all.min.js" %}"></script>
+    <script src="{% static "assets/js/bootnavbar.js" %}"></script>
+    <script src="{% static "assets/js/select/bootstrap-select.min.js" %}"></script>
+{% endblock %}

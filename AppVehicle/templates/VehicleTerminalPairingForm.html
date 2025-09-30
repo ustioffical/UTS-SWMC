@@ -1,0 +1,688 @@
+{% extends "master.html" %}
+{% load static %}
+
+{% block title %}Vehicle Terminal Pairing{% endblock %}
+
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/select2.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/sweetalert2.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/datepicker.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/vendors/timepicker.css' %}">
+    <style>
+        /* Base Form Styling */
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            display: block;
+        }
+
+        .form-control, .form-select, .select2-container--default .select2-selection--single {
+            border: 1px solid #ced4da !important;
+            border-radius: 4px !important;
+            padding: 8px 12px !important;
+            height: 38px !important;
+            font-size: 14px !important;
+            width: 100%;
+            background-color: #fff;
+        }
+
+        .form-control:focus, .form-select:focus,
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: #80bdff !important;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+            outline: 0;
+        }
+
+        /* Select2 Dropdown Fixes */
+        .select2-container {
+            z-index: 1000 !important;
+            position: relative;
+            outline: 0;
+        }
+
+        .select2-container--default .select2-selection--single {
+            background-color: #fff !important;
+            transition: all 0.2s ease;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 24px !important;
+            color: #495057 !important;
+            padding-left: 0;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+            right: 8px;
+        }
+
+        .select2-dropdown {
+            border: 1px solid #ced4da !important;
+            border-radius: 4px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-top: 4px;
+            z-index: 1061 !important;
+        }
+
+        .select2-results__option {
+            padding: 8px 12px !important;
+            transition: background-color 0.2s ease;
+        }
+
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #f8f9fa !important;
+            color: #2c3e50 !important;
+        }
+
+        .select2-container--default .select2-results__option[aria-selected=true] {
+            background-color: #e9ecef !important;
+        }
+
+        /* Datepicker Fixes */
+        .datepicker-dropdown {
+            z-index: 1051 !important;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #ced4da;
+        }
+
+        /* Timepicker Fixes */
+        .ui-timepicker-wrapper {
+            z-index: 1051 !important;
+            width: 100% !important;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            border: 1px solid #ced4da;
+        }
+
+        /* Conditional Fields */
+        .conditional-field {
+            display: none;
+            z-index: 1;
+        }
+
+        /* Card Styling */
+        .card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 15px 20px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Button Styling */
+        .btn {
+            padding: 8px 20px;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            border-color: #3498db;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            margin-right: 10px;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .col-md-4, .col-md-3, .col-md-6 {
+                margin-bottom: 15px;
+            }
+
+            .card-body {
+                padding: 15px;
+            }
+        }
+
+        /* Invalid Feedback */
+        .invalid-feedback {
+            font-size: 12px;
+            color: #e74c3c;
+            margin-top: 4px;
+        }
+
+        /* Required Field Indicator */
+        .text-danger {
+            color: #e74c3c !important;
+        }
+        .select2-container--open {
+            z-index: 1060 !important; /* Higher than other elements */
+        }
+
+        /* Dynamic column adjustment */
+        .dynamic-col {
+            transition: all 0.3s ease;
+        }
+
+
+
+    </style>
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="container-fluid">
+    <div class="page-title">
+        <div class="row">
+            <div class="col-sm-6">
+                <h3>Vehicle Terminal Pairing</h3>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/index">
+                        <svg class="stroke-icon">
+                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                        </svg>
+                    </a></li>
+                    <li class="breadcrumb-item">Vehicle</li>
+                    <li class="breadcrumb-item active">Terminal Pairing</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Vehicle Terminal Pairing Form</h5>
+                </div>
+                <div class="card-body">
+                    <form id="vehicleTerminalPairingForm" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" id="vehicle_code" name="vehicle_code">
+
+                        <!-- Row 1 -->
+                        <div class="row mb-3">
+                            <div class="col-md-4 dynamic-col">
+                                <div class="form-group">
+                                    <label for="remarks" class="form-label">Remarks <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="remarks" name="remarks" required>
+                                        <option value="">Select Remarks</option>
+                                        <option value="Installation">New Installation</option>
+                                        <option value="Redo">Redo</option>
+                                        <option value="Recheck">Recheck</option>
+                                        <option value="Transfer">Transfer</option>
+                                        <option value="Reinstall">Reinstall</option>
+                                    </select>
+                                    <div class="invalid-feedback">Please select remarks.</div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 dynamic-col">
+                                <div class="form-group">
+                                    <label for="customer_number" class="form-label">Customer Number <span class="text-danger">*</span></label>
+                                    <select class="form-select select2" id="customer_number" name="customer_num">
+                                            <option value="">Select Customer</option>
+                                            {% for customer in customers %}
+                                                <option value="{{ customer.customer_no }}">{{ customer.customer_no }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    <div class="invalid-feedback">Please provide a customer number.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 dynamic-col">
+                                <div class="form-group">
+                                    <label for="vehicle_pitb_code" class="form-label">Vehicle PITB Code <span class="text-danger">*</span></label>
+                                    <select class="form-select select2" id="vehicle_pitb_code" name="vehicle_pitb_code" required>
+                                        <option value="">Select PITB Code</option>
+                                        {% for code in vehicle_codes %}
+                                            {% if code.pitb_code %}
+                                            <option value="{{ code.pitb_code }}">{{ code.pitb_code }} - {{code.register_no}}</option>
+                                            {% else %}
+                                            <option value="{{ code.pitb_code }}">Waiting - {{code.register_no}}</option>
+                                            {% endif %}
+
+                                        {% endfor %}
+                                    </select>
+                                    <div class="invalid-feedback">Please select a PITB code.</div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 dynamic-col" id="conditionalPitbCodeFields" style="display: none;">
+                                <div class="form-group">
+                                    <label for="vehicle_pitb_code_missing" class="form-label">PITB Code (Optional) <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="vehicle_pitb_code_missing" name="vehicle_pitb_code_missing" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4" id="vehicleDataSection" style="display: none;">
+                            <div class="col-md-12">
+                                <div class="card border">
+                                    <div class="card-header bg-light">
+                                        <h5>Vehicle Details</h5>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <table class="table table-bordered" id="vehicleDataTable"></table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conditional Fields -->
+                        <div id="conditionalFields" class="conditional-field">
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="old_customer_number" class="form-label">Old Customer Number <span class="text-danger">*</span></label>
+                                        <select class="form-select select2" id="old_customer_number" name="old_customer_number">
+                                            <option value="">Select Customer</option>
+                                            {% for customer in customers %}
+                                                <option value="{{ customer.customer_no }}">{{ customer.customer_no }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="old_terminal" class="form-label">Old Terminal <span class="text-danger">*</span></label>
+                                        <select class="form-select select2" id="old_terminal" name="old_terminal">
+                                            <option value="">Select Terminal</option>
+                                            {% for terminal in terminals %}
+                                                <option value="{{ terminal.terminal_code }}">{{ terminal.terminal_code }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="old_vehicle_pitb_code" class="form-label">Old Vehicle PITB Code <span class="text-danger">*</span></label>
+                                        <select class="form-select select2" id="old_vehicle_pitb_code" name="old_vehicle_pitb_code">
+                                            <option value="">Select Old PITB Code</option>
+                                            {% for code in vehicle_codes %}
+                                                <option value="{{ code.pitb_code }}">{{ code.pitb_code }} - {{code.register_no}}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="old_vehicle_register_no" class="form-label">Old Vehicle Registration No <span class="text-danger">*</span></label>
+                                        <select class="form-select select2" id="old_vehicle_register_no" name="old_vehicle_register_no">
+                                            <option value="">Select Registration No</option>
+                                            {% for vehicle in vehicle_codes %}
+                                                <option value="{{ vehicle.register_no }}">{{ vehicle.register_no }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 2 -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="new_terminal" class="form-label">New Terminal <span class="text-danger">*</span></label>
+                                    <select class="form-select select2" id="new_terminal" name="new_terminal">
+                                        <option value="">Select Terminal</option>
+                                        {% for terminal in terminals %}
+                                            <option value="{{ terminal.terminal_code }}">{{ terminal.terminal_code }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="installation_date" class="form-label">Installation Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control datepicker" id="installation_date" name="installation_date" required>
+                                    <div class="invalid-feedback">Please provide an installation date.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="meter_reading" class="form-label">Meter Reading</label>
+                                    <input type="number" step="0.01" class="form-control" id="meter_reading" name="meter_reading">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 3 -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="testing_time_from" class="form-label">Testing Time From</label>
+                                    <input type="time" class="form-control timepicker" id="testing_time_from" name="testing_time_from">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="testing_time_to" class="form-label">Testing Time To</label>
+                                    <input type="time" class="form-control timepicker" id="testing_time_to" name="testing_time_to">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="install_type" class="form-label">Install Type <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="install_type" name="install_type" required>
+                                    <div class="invalid-feedback">Please provide an installation type.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 4 -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="region" class="form-label">Region <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="region" name="region" required>
+                                    <div class="invalid-feedback">Please provide a region.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="technician_name" class="form-label">Technician Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="technician_name" name="technician_name" required>
+                                    <div class="invalid-feedback">Please provide a technician name.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="installation_place" class="form-label">Installation Place <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="installation_place" name="installation_place" required>
+                                    <div class="invalid-feedback">Please provide an installation place.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12 text-end">
+                                <button type="reset" class="btn btn-secondary">Reset</button>
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block PluginsJS %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{% static 'assets/js/select2/select2.full.min.js' %}"></script>
+<script src="{% static 'assets/js/datepicker/date-picker/datepicker.js' %}"></script>
+<script src="{% static 'assets/js/datepicker/date-picker/datepicker.en.js' %}"></script>
+<script src="{% static 'assets/js/time-picker/jquery.timepicker.min.js' %}"></script>
+{% endblock %}
+
+{% block CustomerJS %}
+<script>
+    $(document).ready(function() {
+        // Initialize Select2 with proper dropdown positioning
+        $('.select2').each(function() {
+            $(this).select2({
+                width: '100%',
+                dropdownAutoWidth: true,
+                dropdownParent: $(this).closest('.form-group'),
+                placeholder: $(this).data('placeholder') || 'Select an option'
+            });
+        });
+
+        // Initialize DatePicker with proper positioning
+        $('.datepicker').datepicker({
+            format: 'yyyy-mm-dd',
+            autoclose: true,
+            todayHighlight: true,
+            orientation: "bottom auto",
+            templates: {
+                leftArrow: '<i class="fa fa-chevron-left"></i>',
+                rightArrow: '<i class="fa fa-chevron-right"></i>'
+            }
+        });
+
+        // Initialize TimePicker with proper positioning
+        if (typeof $.fn.timepicker !== 'undefined') {
+            $('.timepicker').each(function() {
+                $(this).timepicker({
+                    timeFormat: 'h:mm p',
+                    interval: 15,
+                    dropdown: true,
+                    scrollbar: true,
+                    dynamic: false,
+                    minTime: '6:00am',
+                    maxTime: '11:30pm',
+                    appendTo: $(this).closest('.form-group')
+                });
+            });
+        } else {
+            // Fallback for time fields
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            $('#testing_time_from').val(`${hours}:${minutes}`);
+            $('#testing_time_to').val(`${hours}:${minutes}`);
+        }
+
+        // Set default date to today
+        const today = new Date().toISOString().split('T')[0];
+        $('#installation_date').val(today);
+
+        // Reset button handler
+        $('button[type="reset"]').click(function() {
+            $('#vehicleDataSection').hide();
+            $('#conditionalFields').hide();
+            $('.select2').val('').trigger('change');
+            $('#installation_date').val(today);
+            $('#conditionalPitbCodeFields').hide();
+            $('.dynamic-col').removeClass('col-md-3').addClass('col-md-4');
+        });
+
+        // Show/hide conditional fields based on remarks selection
+        $('#remarks').change(function() {
+            const selectedRemarks = $(this).val();
+            const conditionalFields = ['Redo', 'Recheck', 'Reinstall', 'Transfer'];
+
+            if (conditionalFields.includes(selectedRemarks)) {
+                $('#conditionalFields').show();
+                $('#old_customer_number, #old_terminal, #old_vehicle_pitb_code, #old_vehicle_register_no').prop('required', true);
+            } else {
+                $('#conditionalFields').hide();
+                $('#old_customer_number, #old_terminal, #old_vehicle_pitb_code, #old_vehicle_register_no').prop('required', false);
+                $('#old_customer_number').val('');
+                $('#old_terminal, #old_vehicle_pitb_code, #old_vehicle_register_no').val('').trigger('change');
+            }
+        }).trigger('change');
+
+        // Form validation and submission
+        $('#vehicleTerminalPairingForm').submit(function(e) {
+            e.preventDefault();
+
+            const form = $(this)[0];
+            if (!form.checkValidity()) {
+                e.stopPropagation();
+                $(form).addClass('was-validated');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Processing...',
+                text: 'Submitting your request',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            const selectedOption = $('#vehicle_pitb_code').find('option:selected');
+
+            const formData = {
+                customer_num: $('#customer_number').val(),
+                vehicle_code: $('#vehicle_code').val() || $('#vehicle_pitb_code').val(),
+                vehicle_pitb_code_missing: $('#vehicle_pitb_code_missing').val(),
+                vehicle_pitb_code_option_text: $('#vehicle_pitb_code').find('option:selected').text(),
+                old_terminal: $('#old_terminal').val(),
+                new_terminal: $('#new_terminal').val(),
+                installation_date: $('#installation_date').val(),
+                testing_time_from: $('#testing_time_from').val(),
+                testing_time_to: $('#testing_time_to').val(),
+                meter_reading: $('#meter_reading').val(),
+                install_type: $('#install_type').val(),
+                remarks: $('#remarks').val(),
+                region: $('#region').val(),
+                technician_name: $('#technician_name').val(),
+                installation_place: $('#installation_place').val(),
+                old_customer_number: $('#old_customer_number').val(),
+                old_vehicle_pitb_code: $('#old_vehicle_pitb_code').val(),
+                old_vehicle_register_no: $('#old_vehicle_register_no').val(),
+                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+            };
+
+            $.ajax({
+                url: '{% url "save_vehicle_terminal_pairing" %}',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function(response) {
+                    Swal.close();
+                    setTimeout(function() {
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Success!',
+                                text: response.message || 'Vehicle terminal pairing saved successfully!',
+                                icon: 'success',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                $('#vehicleTerminalPairingForm')[0].reset();
+                                $('#vehicleDataSection').hide();
+                                $('#conditionalFields').hide();
+                                $('.select2').val('').trigger('change');
+                                $('#installation_date').val(today);
+                                $('#conditionalPitbCodeFields').hide();
+                                // Properly restore column classes
+                                $('.dynamic-col').removeClass('col-md-3').addClass('col-md-4');
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: response.message || 'Failed to save data.',
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    }, 300);
+                },
+                error: function(xhr) {
+                    Swal.close();
+                    setTimeout(function() {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: xhr.responseJSON?.message || 'Failed to save data. Please try again.',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }, 300);
+                }
+            });
+        });
+
+        // Auto-load vehicle data when PITB code changes
+        $('#vehicle_pitb_code').change(function() {
+            const selectedOption = $(this).find('option:selected');
+            const pitbCode = selectedOption.val();
+            const optionText = selectedOption.text();
+
+            if (pitbCode) {
+                $.ajax({
+                    url: '{% url "VehicleTerminalPairingView" %}',
+                    type: 'GET',
+                    data: {
+                        'pitb_code': pitbCode,
+                        'option_text': optionText // Send the full option text
+                     },
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            $('#vehicle_code').val(response.vehicle_data.vehicle_code);
+                            $('#vehicleDataSection').show();
+                            const vehicleData = response.vehicle_data;
+                            $('#vehicleDataTable').html(`
+                                <tr>
+                                    <th style="width:20%">Register No</th>
+                                    <td style="width:30%">${vehicleData.register_no || 'N/A'}</td>
+                                    <th style="width:20%">Make</th>
+                                    <td style="width:30%">${vehicleData.make || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <th>Engine No</th>
+                                    <td>${vehicleData.engine_no || 'N/A'}</td>
+                                    <th>Chassis No</th>
+                                    <td>${vehicleData.chasis_no || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <th>Color</th>
+                                    <td>${vehicleData.color || 'N/A'}</td>
+                                    <th>Model</th>
+                                    <td>${vehicleData.model || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <th>CC</th>
+                                    <td>${vehicleData.cc || 'N/A'}</td>
+                                    <th>Fuel Type</th>
+                                    <td>${vehicleData.fuel_type || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <th>Vehicle Type</th>
+                                    <td>${vehicleData.vehicle_type || 'N/A'}</td>
+                                    <th>Status</th>
+                                    <td>${vehicleData.status || 'N/A'}</td>
+                                </tr>
+                            `);
+                        } else {
+                            $('#vehicle_code').val('');
+                            $('#vehicleDataSection').hide();
+                        }
+                    },
+                    error: function() {
+                        $('#vehicle_code').val('');
+                        $('#vehicleDataSection').hide();
+                    }
+                });
+            } else {
+                $('#vehicle_code').val('');
+                $('#vehicleDataSection').hide();
+            }
+        });
+    });
+
+
+    // Show/hide PITB Code Optional field when "Waiting" is selected
+    $('#vehicle_pitb_code').change(function() {
+        const selectedOption = $(this).find('option:selected').text();
+
+        if (selectedOption.includes('Waiting')) {
+            $('#conditionalPitbCodeFields').show();
+            $('#vehicle_pitb_code_missing').prop('required', true);
+            $('.dynamic-col').removeClass('col-md-4').addClass('col-md-3');
+        } else {
+            $('#conditionalPitbCodeFields').hide();
+            $('#vehicle_pitb_code_missing').prop('required', false).val('');
+            $('.dynamic-col').removeClass('col-md-3').addClass('col-md-4');
+        }
+    });
+
+</script>
+{% endblock %}

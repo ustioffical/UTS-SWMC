@@ -1,0 +1,840 @@
+{% extends "master.html" %}
+{% load static %}
+
+{% block title %}Trip Report{% endblock %}
+
+<!-- Custom Plugins CSS -->
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/jquery.dataTables.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/sweetalert2.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select/bootstrap-select.min.css" %}">
+{% endblock %}
+<!--End Custom Plugins CSS -->
+
+{% block LeafletLink %}
+    <!--Google Key-->
+    <script type="text/javascript"
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDyN4NVgaHV6-AbuAdWqSBM07iay6gbfKc&libraries=places"></script>
+
+    <!--leaflet js library style link -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+          integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+          crossorigin=""/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.css' %}"/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.css' %}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+{% endblock %}
+
+{% block link %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/app_css/GetColor-Tooltip-Vehicle.css" %}">
+{% endblock %}
+
+{% block css %}
+    .default-map-js-height{
+    height: 605px;
+    }
+
+    .filter-companies .accordion-item {
+    border: 1px solid #e9edf1;
+    }
+
+    .main-file-sidebar .md-sidebar .md-sidebar-aside .common-sort-card .files-left-icons li a svg {
+    width: 24px;
+    height: 24px;
+    }
+
+    .border-tb-l-radius {
+    border-top-left-radius: 5px !important;
+    border-bottom-left-radius: 5px !important;
+    }
+
+    .main-file-sidebar .md-sidebar .md-sidebar-aside .common-sort-card .files-left-icons li {
+    margin-bottom: 10px;
+    }
+
+    .main-file-sidebar .md-sidebar .md-sidebar-aside .common-sort-card .files-left-icons li a {
+    padding: 6px 10px
+    }
+
+    .common-space {
+    justify-content: normal;
+    }
+
+    .course-box .card-body {
+    padding: 10px 15px;
+    }
+
+    .crm-card .card-body p {
+    margin-bottom: 10px;
+    }
+
+    .crm-card .crm-img {
+    height: 80px;
+    }
+
+    /* Custom styles for accordion */
+    .trip-accordion .accordion-button {
+    padding: 1rem 1.25rem;
+    font-weight: 500;
+    }
+
+    .trip-accordion .accordion-button:not(.collapsed) {
+    background-color: #f8f9fa;
+    color: #212529;
+    }
+
+    .trip-accordion .accordion-body {
+    padding: 1rem 1.25rem;
+    }
+
+    .trip-badge {
+    font-size: 0.85em;
+    padding: 0.35em 0.65em;
+    }
+
+    .status-badge {
+    display: inline-block;
+    min-width: 70px;
+    text-align: center;
+    }
+
+    .trip-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+    }
+
+    .trip-detail-item {
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    }
+
+    .trip-detail-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+    }
+
+    .trip-detail-value {
+    font-weight: 500;
+    color: #212529;
+    }
+
+    .trip-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+    }
+
+    .accordion-date {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-left: auto;
+    padding-right: 1rem;
+    }
+
+    .required::after {
+    content: " *";
+    color: red;
+    font-size: 17px;
+    {% comment %} font-weight: bold; {% endcomment %}
+    }
+
+{% endblock %}
+
+<!-- Header Page Hierarchy-->
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3>Trip Report</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/index">
+                            <svg class="stroke-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                            </svg>
+                        </a></li>
+                        <li class="breadcrumb-item">Trip</li>
+                        <li class="breadcrumb-item active">Report</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+<!-- Header Page Hierarchy-->
+
+
+{% block content %}
+    <!-- Container-fluid starts-->
+    <div class="container-fluid main-companies">
+
+    <!-- Trip Report Filters -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form id="dateRangeForm" method="POST" action="{% url 'trip-report-view' %}">
+                        {% csrf_token %}
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-2">
+                                <label class="form-label required" for="vehicle_type">Vehicle Type</label>
+                                <select class="form-select" name="vehicle_type" id="vehicle_type">
+                                    <option value="">All</option>
+                                    {% for vt in dropdown_vehicle_types %}
+                                        <option value="{{ vt }}"
+                                                {% if vt == selected_vehicle_type %}selected{% endif %}>{{ vt }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label required" for="vehicle_code">Vehicle Code:</label>
+                                <select class="selectpicker" name="vehicle_code" id="vehicle_code"
+                                        data-live-search="true">
+                                    {% for code in vehicle_codes %}
+                                        <option value="{{ code }}"
+                                                {% if code == selected_vehicle_code %}selected{% endif %}>{{ code }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            {% comment %} <div class="col-md-2">
+                                  <label class="form-label" for="status">Vehicle Status:</label>
+                                  <select class="selectpicker" name="gis_geo_status" id="vehicle_status" data-live-search="true">
+                                      <option value="">Select one</option>
+                                    {% for status in dropdown_g_statuses %}
+                                    <option value="{{ status }}" {% if status == selected_gis_geo_status %}selected{% endif %}>{{ status }}</option>
+                                    {% endfor %}
+                                  </select>
+                              </div> {% endcomment %}
+                            <div class="col-md-2">
+                                <label for="start_date" class="form-label required">Start Date</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date"
+                                       value="{{ start_date|date:'Y-m-d' }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="end_date" class="form-label required">End Date</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date"
+                                       value="{{ end_date|date:'Y-m-d' }}">
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary me-2">Filter</button>
+                                <!-- Export to Excel button -->
+                                <button type="submit" name="export" value="excel" class="btn btn-success">Export
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Total Trips - Working Hour - Distance (BOXES) -->
+    <div id="summary-boxes" class="row general-widget-wrapper" style="display: none;">
+        <div class="col-sm-4 col-xl-4 col-lg-4 box-col-4">
+            <div class="card course-box">
+                <div class="card-body">
+                    <div class="course-widget">
+                        <div class="course-icon all">
+                            <svg class="fill-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="mb-0">
+                                <span class="counter" id="summary_total_vehicle">{{ total_trips }}</span>
+                            </h4>
+                            <span class="f-light">Total Trips</span>
+                            <a class="btn btn-light f-light m-t-10" href="#">
+                                View List
+                                <span class="ms-2">
+                                      <svg class="fill-icon f-light">
+                                          <use href="{% static 'assets/svg/icon-sprite.svg' %}#arrowright"></use>
+                                      </svg>
+                                  </span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <ul class="square-group">
+                    <li class="square-1 warning"></li>
+                    <li class="square-1 primary"></li>
+                    <li class="square-2 warning1"></li>
+                    <li class="square-3 danger"></li>
+                    <li class="square-4 light"></li>
+                    <li class="square-5 warning"></li>
+                    <li class="square-6 success"></li>
+                    <li class="square-7 success"></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-sm-4 col-xl-4 col-lg-4 box-col-4">
+            <div class="card course-box">
+                <div class="card-body">
+                    <div class="course-widget">
+                        <div class="course-icon success">
+                            <svg class="fill-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="mb-0">
+                                <span class="counter" id="summary_moving_vehicle">{{ working_hours }}</span>
+                            </h4>
+                            <span class="f-light">Working Hours</span>
+                            <!-- Copy this -->
+                            <a class="btn btn-light f-light m-t-10" href="#">
+                                View List
+                                <span class="ms-2">
+                                      <svg class="fill-icon f-light">
+                                          <use href="{% static 'assets/svg/icon-sprite.svg' %}#arrowright"></use>
+                                      </svg>
+                                  </span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <ul class="square-group">
+                    <li class="square-1 warning"></li>
+                    <li class="square-1 primary"></li>
+                    <li class="square-2 warning1"></li>
+                    <li class="square-3 danger"></li>
+                    <li class="square-4 light"></li>
+                    <li class="square-5 warning"></li>
+                    <li class="square-6 success"></li>
+                    <li class="square-7 success"></li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-sm-4 col-xl-4 col-lg-4 box-col-4">
+            <div class="card course-box">
+                <div class="card-body">
+                    <div class="course-widget">
+                        <div class="course-icon info">
+                            <svg class="fill-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="mb-0">
+                                <span class="counter" id="summary_idle_vehicle">{{ total_distance }} KM</span>
+                            </h4>
+                            <span class="f-light">Distance</span>
+                            <a class="btn btn-light f-light m-t-10" href="#">
+                                View List
+                                <span class="ms-2">
+                                      <svg class="fill-icon f-light">
+                                          <use href="{% static 'assets/svg/icon-sprite.svg' %}#arrowright"></use>
+                                      </svg>
+                                  </span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <ul class="square-group">
+                    <li class="square-1 warning"></li>
+                    <li class="square-1 primary"></li>
+                    <li class="square-2 warning1"></li>
+                    <li class="square-3 danger"></li>
+                    <li class="square-4 light"></li>
+                    <li class="square-5 warning"></li>
+                    <li class="square-6 success"></li>
+                    <li class="square-7 success"></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- No filters message -->
+    <div id="no-filters-message" class="row" style="display: none;">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h4 class="mb-3">Please Select Filters</h4>
+                    <p class="text-muted">Select filters above to view trip data and analysis.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trip data content -->
+    <div id="trip-data-content" class="row candidate-wrapper" style="display: none;">
+
+
+        <div class="col-md-6">
+            <div class="md-sidebar">
+                <div class="md-sidebar-aside job-sidebar custom-scrollbar">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="header-top "><h5>Trips</h5></div>
+                        </div>
+                        <div class="card-body filter-companies">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-body candidates-box px-0">
+
+                                        <div class="schedule-card">
+                                            <ul class="schedule-list">
+                                                <li class="primary"><img
+                                                        src="{% static 'assets/images/dashboard/user/4.jpg' %}"
+                                                        alt="profile">
+                                                    <div>
+                                                        <h6 class="mb-1">Web Design</h6>
+                                                        <ul>
+                                                            <li class="f-light">
+                                                                <svg class="fill-icon f-light">
+                                                                    <use href="{% static 'assets/svg/icon-sprite.svg' %}#bag"></use>
+                                                                </svg>
+                                                                <span>March 3, 2024</span>
+                                                            </li>
+                                                            <li class="f-light">
+                                                                <svg class="fill-icon f-success">
+                                                                    <use href="{% static 'assets/svg/icon-sprite.svg' %}#clock"></use>
+                                                                </svg>
+                                                                <span> 09.00 - 12.00 AM (02H:23S)</span>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="p-l-10">
+                                                        <ul>
+                                                            <li class="f-light">
+                                                                <div class="email-wrap bookmark-wrap todo-wrap">
+                                                                    <div class="todo-tasks">
+                                                                        <button class="delete-button"><i
+                                                                                class="fa-solid fa-list-check"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </li>
+                                                            <li class="f-light">
+                                                                <div class="email-wrap bookmark-wrap todo-wrap">
+                                                                    <div class="todo-tasks">
+                                                                        <button class="delete-button"><i
+                                                                                class="fa-solid fa-map-marked"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                        {% if all_trip_points %}
+                                            <div class="accordion trip-accordion" id="tripAccordion">
+                                                {% for trip in all_trip_points %}
+                                                    <div class="accordion-item">
+                                                        <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                                                            <button class="accordion-button {% if forloop.counter != 1 %}collapsed{% endif %}"
+                                                                    type="button" data-bs-toggle="collapse"
+                                                                    data-bs-target="#collapse{{ forloop.counter }}"
+                                                                    aria-expanded="{% if forloop.counter == 1 %}true{% else %}false{% endif %}"
+                                                                    aria-controls="collapse{{ forloop.counter }}">
+                                                          <span class="status-badge badge
+                                                              {% if trip.status == 'moving' %}bg-success
+                                                              {% elif trip.status == 'parked' %}bg-warning
+                                                              {% elif trip.status == 'idle' %}bg-secondary
+                                                              {% elif trip.status == 'offline' %}bg-danger
+                                                              {% elif trip.status == 'waiting' %}bg-info
+                                                              {% else %}bg-primary{% endif %} me-2">
+                                                              {{ trip.status|title }}
+                                                          </span>
+                                                                Trip #{{ trip.trip_id }}
+                                                                <span class="accordion-date">{{ trip.start_time|slice:":10" }} ({{ trip.start_time|slice:"11:16" }} - {{ trip.end_time|slice:"11:16" }})</span>
+                                                            </button>
+                                                        </h2>
+                                                        <div id="collapse{{ forloop.counter }}"
+                                                             class="accordion-collapse collapse {% if forloop.counter == 1 %}show{% endif %}"
+                                                             aria-labelledby="heading{{ forloop.counter }}"
+                                                             data-bs-parent="#tripAccordion">
+                                                            <div class="accordion-body">
+                                                                <div class="trip-details-grid">
+                                                                    <div class="trip-detail-item">
+                                                                        <div class="trip-detail-label">Start Time</div>
+                                                                        <div class="trip-detail-value">{{ trip.start_time }}</div>
+                                                                    </div>
+                                                                    <div class="trip-detail-item">
+                                                                        <div class="trip-detail-label">End Time</div>
+                                                                        <div class="trip-detail-value">{{ trip.end_time }}</div>
+                                                                    </div>
+                                                                    <div class="trip-detail-item">
+                                                                        <div class="trip-detail-label">Duration</div>
+                                                                        <div class="trip-detail-value">{{ trip.duration }}</div>
+                                                                    </div>
+                                                                    <div class="trip-detail-item">
+                                                                        <div class="trip-detail-label">Distance</div>
+                                                                        <div class="trip-detail-value">{{ trip.distance }}
+                                                                            KM
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="trip-actions">
+                                                                    <button class="btn btn-primary d-inline-flex align-items-center"
+                                                                            onclick="showTripOnMap({{ trip.trip_id }})">
+                                                                        <i class="fa-solid fa-map me-2"></i> Map
+                                                                    </button>
+                                                                    <button class="btn btn-info d-inline-flex align-items-center"
+                                                                            onclick="showTripDetails({{ trip.trip_id }})">
+                                                                        <i class="fa-solid fa-info-circle me-2"></i>
+                                                                        Details
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <div class="text-center py-4">
+                                                <p class="text-muted">No trip data found for the selected filters.</p>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body z-1 p-0">
+                    <div class="default-map-js-height b-r-10" id="create-container-map"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Table -->
+    <div id="trip-details-tables" style="display: none;">
+        <div class="row candidate-wrapper">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="header-top">
+                            <h5>Trip Summary</h5>
+                            <button type="button" class="btn-close" aria-label="Close"
+                                    onclick="closeTripDetails()"></button>
+                        </div>
+                    </div>
+                    <div class="card-body candidates-box px-0">
+                        <div class="table-responsive custom-scrollbar">
+                            <table class="table" id="trip-summary-table">
+                                <thead>
+                                <tr>
+                                    <th>Start Time</th>
+                                    <th>End Time</th>
+                                    <th>Duration</th>
+                                    <th>Distance</th>
+                                    <th>Status</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tbody_summary_table">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detail Table -->
+        <div class="row">
+            <div class="col-md-12">
+                <h3 class="mb-3">Trip Details</h3>
+            </div>
+        </div>
+        <div class="row candidate-wrapper">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body candidates-box px-0">
+                        <div class="table-responsive custom-scrollbar">
+                            <table class="table" id="vehicle-monitoring-table">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Vehicle Code</th>
+                                    <th>VendorDateTime</th>
+                                    <th>Device Status</th>
+                                    <th>Status</th>
+                                    <th>Speed</th>
+                                    <th>Location</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tbody_vehicle_status_datatable">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- Container-fluid Ends-->
+
+{% endblock %}
+
+
+{% block LeafletJS %}
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+            integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+            crossorigin=""></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/GoogleMutant/Leaflet.GoogleMutant.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/measure/L.MeasuringTool.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.js' %}"></script>
+    <!-- Dependency to Leaflet Draw -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://npmcdn.com/leaflet.path.drag/src/Path.Drag.js"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Editable/Leaflet.Editable.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.geometryutil.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.snap.js" %}"></script>
+
+    <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+{% endblock %}
+
+<!-- Plugins JS start-->
+{% block PluginsJS %}
+
+    <script src="{% static "assets/js/datatable/datatables/jquery.dataTables.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.select.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/select.bootstrap5.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/datatable.custom.js" %}"></script>
+    <script src="{% static "assets/js/sweet-alert/sweetalert.min.js" %}"></script>
+
+    <script src="{% static "assets/js/flat-pickr/flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/flat-pickr/custom-flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/select/bootstrap-select.min.js" %}"></script>
+    <script src="{% static "assets/js/tooltip-init.js" %}"></script>
+
+    <!-- Show Vehicle Codes Based on Selecting Vehicle Type (START) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize select picker
+            $('.selectpicker').selectpicker();
+
+            // Check if filters are applied (from server-side)
+            const filtersApplied = {% if filters_applied %}true{% else %}false{% endif %};
+
+            if (filtersApplied) {
+                $('#trip-data-content').show();
+                $('#no-filters-message').hide();
+                $('#summary-boxes').show();
+            } else {
+                $('#no-filters-message').show();
+                $('#trip-data-content').hide();
+                $('#summary-boxes').hide();
+            }
+
+            // Disable vehicle code select initially
+            $('#vehicle_code').prop('disabled', true).selectpicker('refresh');
+
+            // Function to update vehicle codes
+            function updateVehicleCodes() {
+                const vehicleType = $('#vehicle_type').val();
+                const vehicleStatus = $('#vehicle_status').val();
+                const vehicleCodeSelect = $('#vehicle_code');
+
+                // Store current selection before updating
+                const currentSelection = vehicleCodeSelect.val();
+
+                // Clear previous options and show loading state
+                vehicleCodeSelect.empty().append('<option value="">Loading...</option>');
+                vehicleCodeSelect.prop('disabled', true).selectpicker('refresh');
+
+                // Make AJAX call to get vehicle codes
+                $.ajax({
+                    url: '{% url "get_vehicle_codes" %}',
+                    data: {
+                        vehicle_type: vehicleType,
+                        vehicle_status: vehicleStatus
+                    },
+                    success: function (data) {
+                        vehicleCodeSelect.empty();
+
+                        if (data.vehicle_codes && data.vehicle_codes.length > 0) {
+                            // Add "All" option
+                            vehicleCodeSelect.append(`<option value="">All (${data.count})</option>`);
+
+                            // Add vehicle codes
+                            data.vehicle_codes.forEach(code => {
+                                vehicleCodeSelect.append($('<option>', {
+                                    value: code,
+                                    text: code
+                                }));
+                            });
+
+                            // Try to restore previous selection if it exists in new options
+                            if (currentSelection && data.vehicle_codes.includes(currentSelection)) {
+                                vehicleCodeSelect.val(currentSelection);
+                            } else if ("{{ selected_vehicle_code }}" && data.vehicle_codes.includes("{{ selected_vehicle_code }}")) {
+                                vehicleCodeSelect.val("{{ selected_vehicle_code }}");
+                            }
+                        } else {
+                            vehicleCodeSelect.append('<option value="">No vehicles available</option>');
+                        }
+
+                        vehicleCodeSelect.prop('disabled', false);
+                        vehicleCodeSelect.selectpicker('refresh');
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error fetching vehicle codes:", error);
+                        vehicleCodeSelect.empty()
+                            .append('<option value="">Error loading vehicles</option>')
+                            .prop('disabled', true)
+                            .selectpicker('refresh');
+                    }
+                });
+            }
+
+            // Update vehicle codes when vehicle type or status changes
+            $('#vehicle_type').change(function () {
+                updateVehicleCodes();
+            });
+
+            // Initial load of vehicle codes if vehicle type is selected
+            if ($('#vehicle_type').val()) {
+                updateVehicleCodes();
+            } else {
+                // Enable vehicle code select but show placeholder
+                $('#vehicle_code')
+                    .empty()
+                    .append('<option value=""></option>')
+                    .prop('disabled', true)
+                    .selectpicker('refresh');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Previous code...
+
+            // Set selected vehicle code on page load
+            const selectedVehicleCode = "{{ selected_vehicle_code }}";
+            if (selectedVehicleCode) {
+                $('#vehicle_code').val(selectedVehicleCode);
+                $('#vehicle_code').selectpicker('refresh');
+            }
+        });
+
+        // Handle form submission
+        $('#dateRangeForm').on('submit', function (e) {
+            const vehicleType = $('#vehicle_type').val();
+            const vehicleCode = $('#vehicle_code').val();
+            const vehicleStatus = $('#vehicle_status').val();
+            const startDate = $('#start_date').val();
+            const endDate = $('#end_date').val();
+
+            const hasFilters = ((vehicleType && vehicleCode) || vehicleStatus) && startDate && endDate;
+
+            if (!hasFilters) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Filter Required',
+                    text: 'Please select filters before proceeding.',
+                    icon: 'warning',
+                    confirmButtonText: 'OK'
+                });
+                return false;
+            }
+        });
+
+        // Functions for trip actions
+        function showTripOnMap(tripId) {
+            // Implement map functionality here
+            console.log("Showing trip on map:", tripId);
+        }
+
+        function showTripDetails(tripId) {
+            console.log("Showing details for trip:", tripId);
+            console.log("Available trips:", window.allTripPoints);
+            console.log("Available tracker points:", window.allTrackerPoints);
+
+            // Hide trip content and show details
+            $('#trip-details-tables').show();
+
+            // Filter and populate summary table
+            const tripData = window.allTripPoints.find(trip => parseInt(trip.trip_id) === parseInt(tripId));
+            console.log("Found trip data:", tripData);
+
+            if (tripData) {
+                const summaryHtml = `
+                  <tr>
+                      <td>${tripData.start_time}</td>
+                      <td>${tripData.end_time}</td>
+                      <td>${tripData.duration}</td>
+                      <td>${tripData.distance} KM</td>
+                      <td><span class="badge bg-${getStatusColor(tripData.status)}">${tripData.status}</span></td>
+                  </tr>
+              `;
+                $('#tbody_summary_table').html(summaryHtml);
+            } else {
+                console.error("Trip data not found for ID:", tripId);
+            }
+
+            // Filter and populate details table
+            const detailsData = window.allTrackerPoints.filter(point => parseInt(point.trip_id) === parseInt(tripId));
+            console.log("Filtered details data:", detailsData);
+
+            if (detailsData && detailsData.length > 0) {
+                const detailsHtml = detailsData.map((row, index) => `
+                  <tr>
+                      <th scope="row">${index + 1}</th>
+                      <td>${row.tracker_data.vehicle_code}</td>
+                      <td>${row.tracker_data.vendor_date_time}</td>
+                      <td>${row.tracker_data.device_status}</td>
+                      <td>${row.tracker_data.gis_geo_status}</td>
+                      <td>${row.tracker_data.speed}</td>
+                      <td>${row.tracker_data.location || 'N/A'}</td>
+                  </tr>
+              `).join('');
+                $('#tbody_vehicle_status_datatable').html(detailsHtml);
+            } else {
+                $('#tbody_vehicle_status_datatable').html('<tr><td colspan="9" class="text-center">No details found for this trip</td></tr>');
+                console.error("No details found for trip ID:", tripId);
+            }
+
+            // Scroll to details section
+            $('#trip-details-tables')[0].scrollIntoView({behavior: 'smooth'});
+        }
+
+        function closeTripDetails() {
+            $('#trip-details-tables').hide();
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                'moving': 'success',
+                'parked': 'warning',
+                'idle': 'secondary',
+                'offline': 'danger',
+                'waiting': 'info'
+            };
+            return colors[status.toLowerCase()] || 'primary';
+        }
+
+        // Store trip data globally
+        window.allTripPoints = JSON.parse('{{ all_trip_points_json|safe }}');
+        window.allTrackerPoints = JSON.parse('{{ all_tracker_points_json|safe }}');
+    </script>
+    <!-- Show Vehicle Codes Based on Selecting Vehicle Type (END) -->
+
+{% endblock %}
+<!-- Plugins JS Ends-->

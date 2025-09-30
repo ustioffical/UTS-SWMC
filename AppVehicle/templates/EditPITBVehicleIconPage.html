@@ -1,0 +1,118 @@
+{% extends 'master.html' %}
+{% load static %}
+
+{% block title %}Edit Vehicle Icon{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-3">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="text-white m-0">Edit Vehicle Icon</h4>
+        </div>
+        <div class="card-body">
+            <!-- Form with HTMX -->
+            <form 
+                hx-patch="{% url 'vehicle-icons-detail' id %}" 
+                hx-encoding="multipart/form-data"
+                hx-target="#response-div"
+                hx-swap="none"
+                id="edit-vehicle-icon-form">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="vehicle_type" class="form-label">Vehicle Type</label>
+                    <select class="form-select" id="vehicle_type" name="vehicle_type" required>
+                        <option value="" disabled>Select Vehicle Type</option>
+                        {% for type in vehicle_types %}
+                            <option value="{{ type.vehicle_type_name }}" {% if icon.vehicle_type == type.vehicle_type_name %}selected{% endif %}>{{ type.vehicle_type_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="vehicle_icon" class="form-label">Vehicle Icon</label>
+                    <div class="mb-2">
+                        {% if icon.vehicle_icon %}
+                            <img src="{{ icon.vehicle_icon.url }}" alt="Current icon" class="img-thumbnail" style="max-height: 100px;">
+                            <p class="form-text">Current icon</p>
+                        {% endif %}
+                    </div>
+                    <input type="file" class="form-control" id="vehicle_icon" name="vehicle_icon" accept="image/*">
+                    <div class="form-text">Upload a new image file to replace the current icon (optional).</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status" required>
+                        <option value="Active" {% if icon.status == 'Active' %}selected{% endif %}>Active</option>
+                        <option value="Blocked" {% if icon.status == 'Blocked' %}selected{% endif %}>Blocked</option>
+                    </select>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="submit" class="btn btn-success">
+                        <span class="spinner-border spinner-border-sm d-none" id="spinner" role="status" aria-hidden="true"></span>
+                        Update
+                    </button>
+                    <a href="{% url 'PITBVehicleIconList' %}" class="btn btn-secondary">Back to List</a>
+                </div>
+            </form>
+            
+            <!-- Response container -->
+            <div id="response-div" class="mt-3"></div>
+        </div>
+    </div>
+</div>
+{% block PluginsJS %}
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <!-- Add Hyperscript library -->
+    <script src="https://unpkg.com/hyperscript.org@0.9.11"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get the form element
+        const form = document.getElementById('edit-vehicle-icon-form');
+        
+        // Add event listeners for HTMX events
+        form.addEventListener('htmx:beforeRequest', function(event) {
+            document.querySelector('#spinner').classList.remove('d-none');
+        });
+        
+        form.addEventListener('htmx:afterRequest', function(event) {
+            document.querySelector('#spinner').classList.add('d-none');
+            
+            if (event.detail.successful && event.detail.xhr.status === 200) {
+                alert('PITB icon is updated');
+                window.location.href = "{% url 'PITBVehicleIconList' %}";
+            } else {
+                const msg = 'Error: ' + (event.detail.xhr.responseText || 'Update failed');
+                alert(msg);
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+<!-- HTMX event handlers -->
+<div
+    hx-trigger="htmx:afterRequest from:#edit-vehicle-icon-form"
+    hx-swap="none"
+    hx-target="this"
+    _="on htmx:afterRequest(detail)
+       if detail.successful and detail.xhr.status === 200
+         alert('PITB icon is updated')
+         window.location.href = '{% url 'PITBVehicleIconList' %}'
+       else
+         const msg = 'Error: ' + (detail.xhr.responseText || 'Update failed')
+         alert(msg)
+       end
+       document.querySelector('#spinner').classList.add('d-none')">
+</div>
+
+<div
+    hx-trigger="htmx:beforeRequest from:#edit-vehicle-icon-form"
+    hx-swap="none"
+    _="on htmx:beforeRequest
+       document.querySelector('#spinner').classList.remove('d-none')">
+</div>
+
+{% endblock %}

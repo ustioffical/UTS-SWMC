@@ -1,0 +1,114 @@
+{% extends "master.html" %}
+{% load static %}
+
+{% block title %}Vehicle Complaint Details{% endblock %}
+
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3>Vehicle Complaint Details</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/index">
+                            <svg class="stroke-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                            </svg>
+                        </a></li>
+                        <li class="breadcrumb-item">Vehicle</li>
+                        <li class="breadcrumb-item">Complaints</li>
+                        <li class="breadcrumb-item active">View</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5>Complaint # {{ complaint.complaint_code }}</h5>
+                        <span class="badge rounded-pill fs-5
+                            {% if complaint.status == 'Pending' %}bg-warning{% elif complaint.status == 'In Progress' %}bg-info{% elif complaint.status == 'Resolved' %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ complaint.status }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3 pb-3 border-bottom">
+                        <div class="col-md-3 fw-bold">Vehicle Information:</div>
+                        <div class="col-md-9">
+                            <strong>{{ complaint.vehicle_code.vehicle_code }}</strong>
+                            {% if complaint.vehicle_code.register_no %}
+                                <br><small>({{ complaint.vehicle_code.register_no }})</small>
+                            {% endif %}
+                            {% if complaint.vehicle_code.vehicle_type %}
+                                <br><span class="text-muted">Type: {{ complaint.vehicle_code.vehicle_type }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 pb-3 border-bottom">
+                        <div class="col-md-3 fw-bold">Complaint Type:</div>
+                        <div class="col-md-9">{{ complaint.complaint_type }}</div>
+                    </div>
+
+                    <div class="row mb-3 pb-3 border-bottom">
+                        <div class="col-md-3 fw-bold">Description:</div>
+                        <div class="col-md-9">{{ complaint.description }}</div>
+                    </div>
+
+                    <div class="row mb-3 pb-3 border-bottom">
+                        <div class="col-md-3 fw-bold">Created:</div>
+                        <div class="col-md-9">
+                            {{ complaint.created_at|date:"F j, Y, g:i A" }}
+                            <br>By: {{ complaint.created_by }}
+                        </div>
+                    </div>
+
+                    {% if complaint.remarks %}
+                    <div class="row mb-3 pb-3 border-bottom">
+                        <div class="col-md-3 fw-bold">Remarks:</div>
+                        <div class="col-md-9">{{ complaint.remarks }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if complaint.updated_at %}
+                    <div class="row mb-3 pb-3 border-bottom">
+                        <div class="col-md-3 fw-bold">Last Updated:</div>
+                        <div class="col-md-9">
+                            {{ complaint.updated_at|date:"F j, Y, g:i A" }}
+                            {% if complaint.updated_by %}
+                            <br>By: {{ complaint.updated_by }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row mt-4">
+                        <div class="col text-end">
+                            <a href="{% url 'status' %}" class="btn btn-secondary">
+                                <i class="fa fa-arrow-left me-1"></i> Back to Vehicles
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col text-end">
+                            <a href="{% url 'manage-complaints' %}" class="btn btn-secondary">
+                                <i class="fa fa-arrow-left me-1"></i> Back to Complaint Manager
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

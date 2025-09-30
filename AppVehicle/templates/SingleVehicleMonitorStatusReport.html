@@ -1,0 +1,725 @@
+{% extends "master.html" %}
+{% load static %}
+
+{% block title %}Single Vehicle Report{% endblock %}
+
+<!-- Custom Plugins CSS -->
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/jquery.dataTables.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/sweetalert2.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select/bootstrap-select.min.css" %}">
+{% endblock %}
+<!--End Custom Plugins CSS -->
+
+{% block LeafletLink %}
+    <!--Google Key-->
+    <script type="text/javascript"
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDyN4NVgaHV6-AbuAdWqSBM07iay6gbfKc&libraries=places"></script>
+
+    <!--leaflet js library style link -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+          integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+          crossorigin=""/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.css' %}"/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.css' %}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+{% endblock %}
+
+{% block link %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/app_css/GetColor-Tooltip-Vehicle.css" %}">
+{% endblock %}
+
+{% block css %}
+
+    .default-map-js-height{
+    height: 605px;
+    }
+
+    .filter-companies .accordion-item {
+    border: 1px solid #e9edf1;
+    }
+
+    .main-file-sidebar .md-sidebar .md-sidebar-aside .common-sort-card .files-left-icons li a svg {
+    width: 24px;
+    height: 24px;
+    }
+
+    .border-tb-l-radius {
+    border-top-left-radius: 5px !important;
+    border-bottom-left-radius: 5px !important;
+    }
+
+    .main-file-sidebar .md-sidebar .md-sidebar-aside .common-sort-card .files-left-icons li {
+    margin-bottom: 10px;
+    }
+
+    .main-file-sidebar .md-sidebar .md-sidebar-aside .common-sort-card .files-left-icons li a {
+    padding: 6px 10px
+    }
+
+    .common-space {
+    justify-content: normal;
+    }
+
+    .course-box .card-body {
+    padding: 10px 15px;
+    }
+
+{% endblock %}
+
+<!-- Header Page Hierarchy-->
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    {#        <h3>{{breadcrumb.title}} </h3>#}
+                    <h3>Vehicle Report</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/index">
+                            <svg class="stroke-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                            </svg>
+                        </a></li>
+                        {#          <li class="breadcrumb-item">{{breadcrumb.parent}}</li>#}
+                        <li class="breadcrumb-item">Report</li>
+                        <li class="breadcrumb-item active">{{ vehicle_code }}</li>
+                        {#          <li class="breadcrumb-item active">{{breadcrumb.child}}</li>#}
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+<!-- Header Page Hierarchy-->
+
+
+{% block content %}
+    <!-- Container-fluid starts-->
+    <div class="container-fluid main-companies">
+
+
+        <div class="row general-widget-wrapper">
+
+            <style>
+                .course-box .card-body {
+                    padding: 10px 5px;
+                }
+            </style>
+
+            {% for status in vehicle_duration %}
+            <div class="col-sm-2 col-xl-2 col-lg-2 box-col-2">
+            <div class="card course-box">
+                <div class="card-body">
+                    <div class="course-widget">
+                        <div class="course-icon all">
+                            <svg class="fill-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="mb-0">
+                                <span class="counter" id="summary_total_vehicle">{{status.working.duration|default:"0.0h"}}</span>
+                            </h4>
+                            <span class="f-light">Working Hours</span>
+                            <a class="btn btn-light f-light m-t-10" href="#">
+                                View List
+                                <span class="ms-2">
+                                    <svg class="fill-icon f-light">
+                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#arrowright"></use>
+                                    </svg>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <ul class="square-group">
+                    <li class="square-1 warning"></li>
+                    <li class="square-1 primary"></li>
+                    <li class="square-2 warning1"></li>
+                    <li class="square-3 danger"></li>
+                    <li class="square-4 light"></li>
+                    <li class="square-5 warning"></li>
+                    <li class="square-6 success"></li>
+                    <li class="square-7 success"></li>
+                </ul>
+            </div>
+            </div>
+            <div class="col-sm-2 col-xl-2 col-lg-2 box-col-2">
+            <div class="card course-box">
+                <div class="card-body">
+                    <div class="course-widget">
+                        <div class="course-icon success">
+                            <svg class="fill-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="mb-0">
+                                <span class="counter" id="summary_moving_vehicle">{{status.moving.duration|default:"0.0h"}}</span>
+                            </h4>
+                            <span class="f-light">Moving Hours</span>
+                            <!-- Copy this -->
+                            <a class="btn btn-light f-light m-t-10" href="#">
+                                View List
+                                <span class="ms-2">
+                                    <svg class="fill-icon f-light">
+                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#arrowright"></use>
+                                    </svg>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <ul class="square-group">
+                    <li class="square-1 warning"></li>
+                    <li class="square-1 primary"></li>
+                    <li class="square-2 warning1"></li>
+                    <li class="square-3 danger"></li>
+                    <li class="square-4 light"></li>
+                    <li class="square-5 warning"></li>
+                    <li class="square-6 success"></li>
+                    <li class="square-7 success"></li>
+                </ul>
+            </div>
+            </div>
+            <div class="col-sm-2 col-xl-2 col-lg-2 box-col-2">
+            <div class="card course-box">
+                <div class="card-body">
+                    <div class="course-widget">
+                        <div class="course-icon info">
+                            <svg class="fill-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="mb-0">
+                                <span class="counter" id="summary_idle_vehicle">{{status.parked.duration|default:"0.0h"}}</span>
+                            </h4>
+                            <span class="f-light">Parked Hours</span>
+                            <a class="btn btn-light f-light m-t-10" href="#">
+                                View List
+                                <span class="ms-2">
+                                    <svg class="fill-icon f-light">
+                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#arrowright"></use>
+                                    </svg>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <ul class="square-group">
+                    <li class="square-1 warning"></li>
+                    <li class="square-1 primary"></li>
+                    <li class="square-2 warning1"></li>
+                    <li class="square-3 danger"></li>
+                    <li class="square-4 light"></li>
+                    <li class="square-5 warning"></li>
+                    <li class="square-6 success"></li>
+                    <li class="square-7 success"></li>
+                </ul>
+            </div>
+            </div>
+            <div class="col-sm-2 col-xl-2 col-lg-2 box-col-2">
+            <div class="card course-box">
+                <div class="card-body">
+                    <div class="course-widget">
+                        <div class="course-icon warning">
+                            <svg class="fill-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="mb-0">
+                                <span class="counter" id="summary_stop_park_vehicle">{{status.idle.duration|default:"0H.0M"}}</span>
+                            </h4>
+                            <span class="f-light">Idle Hours</span>
+                            <a class="btn btn-light f-light m-t-10" href="#">
+                                View List
+                                <span class="ms-2">
+                                    <svg class="fill-icon f-light">
+                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#arrowright"></use>
+                                    </svg>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <ul class="square-group">
+                    <li class="square-1 warning"></li>
+                    <li class="square-1 primary"></li>
+                    <li class="square-2 warning1"></li>
+                    <li class="square-3 danger"></li>
+                    <li class="square-4 light"></li>
+                    <li class="square-5 warning"></li>
+                    <li class="square-6 success"></li>
+                    <li class="square-7 success"></li>
+                </ul>
+            </div>
+            </div>
+            <div class="col-sm-2 col-xl-2 col-lg-2 box-col-2">
+            <div class="card course-box">
+                <div class="card-body">
+                    <div class="course-widget">
+                        <div class="course-icon light">
+                            <svg class="fill-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="mb-0">
+                                <span class="counter" id="summary_offline_vehicle">{{status.offline.duration|default:"0H.0M"}}</span>
+                            </h4>
+                            <span class="f-light">Offline Hours</span>
+                            <a class="btn btn-light f-light m-t-10" href="#">
+                                    View List
+                                    <span class="ms-2">
+                                        <svg class="fill-icon f-light">
+                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#arrowright"></use>
+                                        </svg>
+                                    </span>
+                                </a>
+                        </div>
+                    </div>
+                </div>
+                <ul class="square-group">
+                    <li class="square-1 warning"></li>
+                    <li class="square-1 primary"></li>
+                    <li class="square-2 warning1"></li>
+                    <li class="square-3 danger"></li>
+                    <li class="square-4 light"></li>
+                    <li class="square-5 warning"></li>
+                    <li class="square-6 success"></li>
+                    <li class="square-7 success"></li>
+                </ul>
+            </div>
+            </div>
+            <div class="col-sm-2 col-xl-2 col-lg-2 box-col-2">
+                <div class="card course-box">
+                <div class="card-body">
+                    <div class="course-widget">
+                        <div class="course-icon">
+                            <svg class="fill-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="mb-0">
+                                <span class="counter" id="summary_violation_vehicle">{{status.waiting.duration|default:"0H.0M"}}</span>
+                            </h4>
+                            <span class="f-light">Waiting Hours</span>
+                            <a class="btn btn-light f-light m-t-10" href="#">
+                                View List
+                                <span class="ms-2">
+                                        <svg class="fill-icon f-light">
+                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#arrowright"></use>
+                                        </svg>
+                                    </span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <ul class="square-group">
+                    <li class="square-1 warning"></li>
+                    <li class="square-1 primary"></li>
+                    <li class="square-2 warning1"></li>
+                    <li class="square-3 danger"></li>
+                    <li class="square-4 light"></li>
+                    <li class="square-5 warning"></li>
+                    <li class="square-6 success"></li>
+                    <li class="square-7 success"></li>
+                </ul>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="row candidate-wrapper">
+            <div class="col-md-6">
+                <div class="md-sidebar"><a class="btn btn-primary email-aside-toggle md-sidebar-toggle">Filters</a>
+                    <div class="md-sidebar-aside job-sidebar custom-scrollbar">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="header-top "><h5>Vehicle Code : {{vehicle_code}}</h5></div>
+                            </div>
+                            <div class="card-body filter-companies">
+                                <style>
+                                    .crm-card .card-body p {
+                                        margin-bottom: 10px;
+                                    }
+
+                                    .crm-card .crm-img {
+                                        height: 80px;
+                                    }
+                                </style>
+
+                                <div class="col-md-12">
+                                    <div class="accordion" id="accordionExample">
+                                        <!-- FILTER INFORMATION -->
+                                        <div class="accordion-item">
+                                            <div class="accordion-collapse" id="collapseFilter" style="">
+                                                <div class="accordion-body">
+                                                    <div class="card-body filter-cards-view animate-chk p-0">
+                                                        <form method="get" id="filterForm">
+                                                            <div class="row mb-3">
+                                                                <div class="col-md-6">
+                                                                    <label for="startDate" class="form-label">Start Date</label>
+                                                                    <input type="date" class="form-control" id="startDate" name="start_date" value="{{ request.GET.start_date }}">
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <label for="endDate" class="form-label">End Date</label>
+                                                                    <input type="date" class="form-control" id="endDate" name="end_date" value="{{ request.GET.end_date }}">
+                                                                </div>
+                                                                <label class="col-md-12 form-label pt-1">
+                                                                    Status:
+                                                                </label>
+                                                                <div class="col-md-6">
+                                                                    <select id="g_status" name="g_status"
+                                                                            class="selectpicker" data-live-search="true"
+                                                                             >
+                                                                        <option value="">All</option>
+                                                                          {% for status in vehicle_duration %}
+                                                                              {% for key, value in status.items %}
+                                                                                  {% if key != 'vehicle_code' and key != 'pitb_code' and  key != 'register_no' and key != 'distance' and key != 'vehicle_type' and key != 'chasis_no' and key != 'working' and key != 'waiting'%}
+                                                                                      <option value="{{ key }}"
+                                                                                      {% if key == selected_g_status %}selected{% endif %} >
+                                                                                        {% if key == 'no_response' %}
+                                                                                            No Response - ({{ value.count }})
+                                                                                        {% else %}
+                                                                                            {{ key|capfirst }} - ({{ value.count }})
+                                                                                        {% endif %}
+                                                                                      </option>
+                                                                                  {% endif %}
+                                                                              {% endfor %}
+                                                                          {% endfor %}
+                                                                    </select>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <div class="mb-2 btn-showcase d-flex gap-2 justify-content-center">
+                                                                        <button type="submit" class="btn btn-success btn-hover-effect">
+                                                                            <i class="fa-solid fa-search me-1"></i>
+                                                                            Apply Filter
+                                                                        </button>
+                                                                    </div>
+                                                            </div>
+
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- FILTER INFORMATION -->
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12">
+                                  <div class="card">
+                                      <div class="card-body candidates-box px-0">
+
+                                          <div class="table-responsive custom-scrollbar">
+                                              <table class="table" id="vehicle-monitoring-table">
+                                                  <thead>
+                                                      <tr>
+                                                          <th>#</th>
+                                                          <th>Status</th>
+                                                          <th>Time In</th>
+                                                          <th>Time Out</th>
+                                                          <th>Gap</th>
+                                                          <th>Action</th>
+                                                      </tr>
+                                                  </thead>
+                                                  <tbody id="tbody_vehicle_status_datatable">
+                                                      {% if status_sub_category %}
+
+                                                          {% for row in status_sub_category %}
+                                                              <tr>
+                                                                  <th scope="row">{{ forloop.counter }}</th>
+                                                                  <td>
+                                                                      {{ row.status }}
+                                                                  </td>
+                                                                  <td>
+                                                                      {{ row.start_time }}
+                                                                  </td>
+                                                                  <td>{{ row.end_time }}</td>
+                                                                  <td>{{ row.duration }}</td>
+                                                                  <td>
+                                                                      <div class="d-flex">
+                                                                          <button class="btn btn-primary d-inline-flex align-items-center" onclick="">
+                                                                              <i class="fa-solid fa-map me-2"></i> Map
+                                                                          </button>
+                                                                          <button class="btn btn-primary d-inline-flex align-items-center" onclick="showTripDetails({{ row.trip_id }})">
+                                                                              <i class="fa-solid fa-info-circle me-2"></i> Details
+                                                                          </button>
+                                                                      </div>
+                                                                  </td>
+                                                              </tr>
+                                                          {% endfor %}
+                                                      {% else %}
+                                                      <div>No Report Data Found</div>
+                                                      {% endif %}
+                                                  </tbody>
+                                              </table>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body z-1 p-0">
+                        <div class="default-map-js-height b-r-10" id="create-container-map"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="trip-details-tables" style="display: none;">
+        <!-- Export Buttons -->
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="?export=excel_detail&vehicle_code={{ vehicle_code }}&g_status={{ request.GET.g_status }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}" class="btn btn-success">
+                        <i class="fa-solid fa-file-excel me-2"></i>Export Excel
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Table -->
+        <div class="row candidate-wrapper">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                            <div class="header-top">
+                                <h5>Summary</h5>
+                                <button type="button" class="btn-close" aria-label="Close" onclick="closeTripDetails()"></button>
+                            </div>
+                        </div>
+                    <div class="card-body candidates-box px-0">
+                        <div class="table-responsive custom-scrollbar">
+                            <table class="table" id="trip-summary-table">
+                                <thead>
+                                    <tr>
+                                        <th>Vehicle Code</th>
+                                        <th>PITB Code</th>
+                                        <th>Reg. No</th>
+                                        <th>Working Hour</th>
+                                        <th>Moving</th>
+                                        <th>Parked</th>
+                                        <th>Ideal</th>
+                                        <th>Offline</th>
+                                        <th>Waiting</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody_summary_table">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+            <!-- Detail Table -->
+        <div class="row candidate-wrapper">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                            <div class="header-top">
+                                <h5>All Tracker Points</h5>
+                                {% comment %} <button type="button" class="btn-close" aria-label="Close" onclick="closeTripDetails()"></button> {% endcomment %}
+                            </div>
+                        </div>
+                    <div class="card-body candidates-box px-0">
+                        <div class="table-responsive custom-scrollbar">
+                            <table class="table" id="vehicle-monitoring-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Pitb Code</th>
+                                        <th>Reg. No</th>
+                                        <th>Status</th>
+                                        <th>VendorDateTime</th>
+                                        <th>Speed</th>
+                                        <th>Mileage</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody_detail_table">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+    <!-- Container-fluid Ends-->
+
+{% endblock %}
+
+
+
+{% block LeafletJS %}
+<!-- Make sure you put this AFTER Leaflet's CSS -->
+<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+            integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+            crossorigin=""></script>
+            <script src="{% static 'assets/script/jslib/leaflet/plugins/GoogleMutant/Leaflet.GoogleMutant.js' %}"></script>
+            <script src="{% static 'assets/script/jslib/leaflet/plugins/measure/L.MeasuringTool.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.js' %}"></script>
+    <!-- Dependency to Leaflet Draw -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://npmcdn.com/leaflet.path.drag/src/Path.Drag.js"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Editable/Leaflet.Editable.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.geometryutil.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.snap.js" %}"></script>
+
+    <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+    {% endblock %}
+
+    <!-- Plugins JS start-->
+    {% block PluginsJS %}
+
+        <script src="{% static "assets/js/datatable/datatables/jquery.dataTables.min.js" %}"></script>
+        <script src="{% static "assets/js/datatable/datatables/dataTables.js" %}"></script>
+        <script src="{% static "assets/js/datatable/datatables/dataTables.select.js" %}"></script>
+        <script src="{% static "assets/js/datatable/datatables/select.bootstrap5.js" %}"></script>
+        <script src="{% static "assets/js/datatable/datatables/datatable.custom.js" %}"></script>
+        <script src="{% static "assets/js/sweet-alert/sweetalert.min.js" %}"></script>
+
+        <script src="{% static "assets/js/flat-pickr/flatpickr.js" %}"></script>
+        <script src="{% static "assets/js/flat-pickr/custom-flatpickr.js" %}"></script>
+        <script src="{% static "assets/js/select/bootstrap-select.min.js" %}"></script>
+        <script src="{% static "assets/js/tooltip-init.js" %}"></script>
+
+    <script>
+
+      // Handle form submission to remove empty parameters
+      document.getElementById('filterForm').addEventListener('submit', function(e) {
+          e.preventDefault();
+
+          const form = this;
+          const formData = new FormData(form);
+          const params = new URLSearchParams();
+
+          // Only add non-empty parameters
+          for (let [key, value] of formData.entries()) {
+              if (value && value.trim() !== '') {
+                  params.append(key, value);
+              }
+          }
+
+          // Construct clean URL
+          const baseUrl = window.location.pathname;
+          const queryString = params.toString();
+          const newUrl = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+
+          // Navigate to clean URL
+          window.location.href = newUrl;
+      });
+
+      // Functions for trip actions
+      function showTripOnMap(tripId) {
+          // Implement map functionality here
+          console.log("Showing trip on map:", tripId);
+      }
+
+      function showTripDetails(tripId) {
+          console.log("Showing details for trip:", tripId);
+          console.log("Available trips:", window.allTripPoints);
+          console.log("Available tracker points:", window.allTrackerPoints);
+
+          // Show trip details tables
+          $('#trip-details-tables').show();
+
+          // Filter and populate summary table - get the first (and likely only) summary record
+          const tripData = window.statusSummary && window.statusSummary.length > 0 ? window.statusSummary[0] : null;
+          console.log("Found trip data:", tripData);
+
+          if (tripData) {
+              const summaryHtml = `
+                    <tr>
+                        <td>${tripData.vehicle_code || 'N/A'}</td>
+                        <td>${tripData.pitb_code || 'N/A'}</td>
+                        <td>${tripData.register_no || 'N/A'}</td>
+                        <td>${tripData.working?.duration || "0H.0M"}</td>
+                        <td>${tripData.moving?.duration || "0H.0M"}</td>
+                        <td>${tripData.parked?.duration || "0H.0M"}</td>
+                        <td>${tripData.idle?.duration || "0H.0M"}</td>
+                        <td>${tripData.offline?.duration || "0H.0M"}</td>
+                        <td>${tripData.waiting?.duration || "0H.0M"}</td>
+                    </tr>
+              `;
+              $('#tbody_summary_table').html(summaryHtml);
+          } else {
+              $('#tbody_summary_table').html('<tr><td colspan="9" class="text-center">No summary data available</td></tr>');
+              console.error("Trip data not found for ID:", tripId);
+          }
+
+          // Filter and populate details table - fix the filtering logic
+          const detailsData = window.allTrackerPoints.filter(point => {
+              // Check if trip_id matches (could be in different locations)
+              const pointTripId = point.trip_id || (point.tracker_data && point.tracker_data.trip_id);
+              return parseInt(pointTripId) === parseInt(tripId);
+          });
+
+          console.log("Filtered details data:", detailsData);
+          console.log("Looking for trip ID:", tripId);
+
+          if (detailsData && detailsData.length > 0) {
+              const detailsHtml = detailsData.map((row, index) => {
+                  // Handle different data structures
+                  const trackerData = row.tracker_data || row;
+                  return `
+                      <tr>
+                          <th scope="row">${index + 1}</th>
+                          <td>${trackerData.pitb_code || 'N/A'}</td>
+                          <td>${trackerData.register_no || 'N/A'}</td>
+                          <td>${trackerData.gis_geo_status || 'N/A'}</td>
+                          <td>${trackerData.vendor_date_time || 'N/A'}</td>
+                            <td>${trackerData.speed ? trackerData.speed + ' KM/H' : 'N/A'}</td>
+                          <td>${trackerData.mileage || 'N/A'}</td>
+                      </tr>
+                  `;
+              }).join('');
+              $('#tbody_detail_table').html(detailsHtml);
+          } else {
+              $('#tbody_detail_table').html('<tr><td colspan="9" class="text-center">No details found for this trip</td></tr>');
+              console.error("No details found for trip ID:", tripId);
+
+              // Debug: log all available trip IDs
+              const availableTripIds = window.allTrackerPoints.map(point => {
+                  return point.trip_id || (point.tracker_data && point.tracker_data.trip_id);
+              });
+              console.log("Available trip IDs:", [...new Set(availableTripIds)]);
+          }
+
+          // Scroll to details section
+          $('#trip-details-tables')[0].scrollIntoView({ behavior: 'smooth' });
+      }
+
+      function closeTripDetails() {
+          $('#trip-details-tables').hide();
+      }
+
+      // Store trip data globally
+      window.statusSummary = JSON.parse('{{ status_category_json|safe }}');
+      window.allTripPoints = JSON.parse('{{ status_sub_category_json|safe }}');
+      window.allTrackerPoints = JSON.parse('{{ all_tracker_points_json|safe }}');
+    </script>
+
+
+    {% endblock %}
+    <!-- Plugins JS Ends-->

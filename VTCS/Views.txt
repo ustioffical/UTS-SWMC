@@ -1,0 +1,664 @@
+from django.shortcuts import render
+from rest_framework.response import Response
+import requests
+from .models import *
+from DataLogs.models import APITransmissionData
+from rest_framework import viewsets
+from .serializers import *
+import os
+
+AUTH_KEY = os.environ.get('AUTH_KEY')
+
+
+class PostTripDataViewSet(viewsets.ModelViewSet):
+    http_method_names = ['post']
+    queryset = APITripData.objects.all()
+    serializer_class = PostTripDataSerializer
+
+
+class GetTripByVehicleViewSet(viewsets.ModelViewSet):
+    http_method_names = ['get']
+    serializer_class = GetTripByVehicleSerializer
+
+    def get_queryset(self):
+        queryset = APITripData.objects.all()
+        vehicle_code = self.request.query_params.get('vehicle_code')
+        time_in = self.request.query_params.get('time_in')
+        queryset = queryset.filter(vehicle_code=vehicle_code, time_in=time_in)
+        # Sending request to external API
+        headers = {
+            'Authorization': f'Bearer {AUTH_KEY}',
+            'Content-Type': 'application/json'
+        }
+        api_url = 'https://elgcd-ms.punjab.gov.pk/api/get_trip_by_vehicle'
+        response = requests.post(
+            url=api_url,
+            json={"vehicle_code": vehicle_code, "time_in": time_in},
+            headers=headers
+        )
+
+        # Determine response status
+        if response.status_code in [200, 201]:
+            response_status = APITransmissionData.COMPLETED
+        else:
+            response_status = APITransmissionData.REJECTED
+
+        # Get status code as string
+        response_code = str(response.status_code)
+
+        # Get response data
+        remarks = str(response.json())
+
+        # Get vehicle and API code references
+        pitb_api_code = get_object_or_404(PITBApiData, code="PTA-1")
+
+        # Create transmission record
+        api_transmission = APITransmissionData.objects.create(
+            pitb_api_code=pitb_api_code,
+            vehicle_code=vehicle_code,
+            response_code=response_code,
+            response_status=response_status,
+            remarks=remarks,
+            created_by="Admin",
+            updated_by="Admin"
+        )
+
+        return queryset
+
+
+class UpdateTripSlipIdViewSet(viewsets.ModelViewSet):
+    http_method_names = ['post']
+    serializer_class = UpdateTripSlipIdSerializer
+    queryset = APITripData.objects.all()
+
+    def create(self, request):
+        # Get data from request body
+        vehicle_code = request.data.get('vehicle_code')
+        time_in = request.data.get('time_in')
+        slip_id = request.data.get('slip_id')
+
+        if not all([vehicle_code, time_in, slip_id]):
+            return Response({"error": "Missing required parameters"}, status=400)
+
+        # Sending request to external API
+        headers = {
+            'Authorization': f'Bearer {AUTH_KEY}',
+            'Content-Type': 'application/json'
+        }
+        api_url = 'https://elgcd-ms.punjab.gov.pk/api/update_trip_slip_id'
+        response = requests.post(
+            url=api_url,
+            json={"vehicle_code": vehicle_code, "time_in": time_in},
+            headers=headers
+        )
+
+        # Determine response status
+        if response.status_code in [200, 201]:
+            response_status = APITransmissionData.COMPLETED
+        else:
+            response_status = APITransmissionData.REJECTED
+
+        # Get status code as string
+        response_code = str(response.status_code)
+
+        # Get response data
+        remarks = str(response.json())
+
+        # Get vehicle and API code references
+        pitb_api_code = get_object_or_404(PITBApiData, code="PTA-1")
+
+        # Create transmission record
+        api_transmission = APITransmissionData.objects.create(
+            pitb_api_code=pitb_api_code,
+            vehicle_code=vehicle_code,
+            response_code=response_code,
+            response_status=response_status,
+            remarks=remarks,
+            created_by="Admin",
+            updated_by="Admin"
+        )
+
+        try:
+            # Find the trip data to update
+            instance = APITripData.objects.get(vehicle_code=vehicle_code, time_in=time_in)
+
+            # Update the slip_id
+            instance.slip_id = slip_id
+            instance.save()
+
+            # Serialize and return the updated instance
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+
+        except APITripData.DoesNotExist:
+            return Response({"error": "Trip data not found"}, status=404)
+
+
+from django.shortcuts import render
+
+#
+# def vehicle_list(request):
+#     return render(request, 'Vehicle_list.html')
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import APITripData
+from AppVehicle.models import VehicleData, TrackerRawData
+from DataLogs.models import APITransmissionData
+from rest_framework import status
+
+# Add imports at the top of the file
+from django.utils import timezone
+from datetime import datetime
+
+
+class VTCSPostToPITBViewSet(viewsets.ViewSet):
+    """
+    ViewSet for posting trip data to PITB
+    """
+    serializer_class = PostTripDataSerializer
+
+    def create(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            vehicle_code = serializer.validated_data['vehicle_code']
+            trip_date = serializer.validated_data['date']
+
+            try:
+                # Get the vehicle object first
+                try:
+                    vehicle = VehicleData.objects.get(vehicle_code=vehicle_code)
+                except VehicleData.DoesNotExist:
+                    return Response(
+                        {"error": f"Vehicle with code {vehicle_code} does not exist"},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+
+                trips = APITripData.objects.filter(
+                    vehicle_code=vehicle,
+                    time_in__date=trip_date
+                )
+
+                if not trips.exists():
+                    return Response(
+                        {"message": f"No trips found for vehicle {vehicle_code} on {trip_date}"},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+
+                # Process found trips
+                results = []
+                # Call the API function and get the response
+                api_response = PostVTCSToPITBAPI(vehicle_code, trip_date)
+                print(api_response)
+
+                # Check if data was already sent successfully
+                if api_response.get("already_sent", False):
+                    return Response(
+                        {
+                            "message": api_response["response_data"],
+                            "status": "Already Sent"
+                        },
+                        status=status.HTTP_200_OK
+                    )
+
+                for trip in trips:
+                    # Include API response status in the trip details
+                    results.append({
+                        "trip_id": trip.id,
+                        "vehicle": trip.vehicle_code.register_no,
+                        "site": trip.site_name,
+                        "time_in": trip.time_in.strftime('%Y-%m-%d %H:%M:%S'),
+                        "time_out": trip.time_out.strftime('%Y-%m-%d %H:%M:%S'),
+                        "status": "Success" if api_response["status_code"] in [200, 201] else "Failed"
+                    })
+
+                return Response(
+                    {
+                        "message": f"Successfully processed {len(results)} trips",
+                        "trips": results,
+                        "api_response": {
+                            "status_code": api_response["status_code"],
+                            "data": api_response["response_data"]
+                        }
+                    },
+                    status=status.HTTP_200_OK if api_response["status_code"] in [200,
+                                                                                 201] else status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+            except Exception as e:
+                return Response(
+                    {"error": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# VTCSTripList.html is related to this viewset
+class ViewVTCSTripDataViewSet(viewsets.ModelViewSet):
+    http_method_names = ['get', 'patch']
+    serializer_class = ViewTripDataSerializer
+    queryset = APITripData.objects.all()
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_class = APITripDataFilter
+    search_fields = ['vehicle_code', 'tms_code', 'site_name', 'responce_id']
+
+    @transaction.atomic
+    def update(self, request, *args, **kwargs):
+        # Update local database as normal
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+
+        # If there's a response_id, also update PITB
+        if instance.responce_id:
+            result = UpdateVTCSPITBAPIByDataId(instance.responce_id)
+            if result["status_code"] not in [200, 201]:
+                # Raise an exception to trigger rollback
+                raise Exception(f"PITB update failed: {result['response_data']}")
+
+        # Return the updated instance
+        return Response(serializer.data)
+
+
+# For displaying the Trip List HTML page
+def ViewVTCSTripDataList(request):
+    template_name = "PITBApi/VTCSTripList.html"
+
+    return render(request, '')
+
+
+### DISPLAYING VTCS TRIP FORM HTML PAGE
+def PushVTCSTripData_FormView(request):
+    template_name = "PITBApi/PushVTCSTripData_Form.html"
+    if request.method == "POST":
+        # Process datetime fields
+        try:
+            time_in_str = request.POST.get("time_in", "")
+            time_out_str = request.POST.get("time_out", "")
+            trip_date_str = request.POST.get("trip_date", "")
+
+            # Print for debugging
+            print(f"Received time_in: '{time_in_str}'")
+            print(f"Received time_out: '{time_out_str}'")
+            print(f"Received trip_date: '{trip_date_str}'")
+
+            time_in = datetime.strptime(time_in_str, "%Y-%m-%d %H:%M:%S")
+            time_out = datetime.strptime(time_out_str, "%Y-%m-%d %H:%M:%S")
+            trip_date = datetime.strptime(trip_date_str, "%Y-%m-%d").date()
+
+        except ValueError as e:
+            messages.error(request, f"Date format error: {e}")
+
+        try:
+            vehicle = VehicleData.objects.get(vehicle_code=request.POST["vehicle_code"])
+            gprs = TrackerRawData.objects.get(gprs_raw_code=request.POST.get("gprs_raw_code"))
+
+        except (VehicleData.DoesNotExist,
+                TrackerRawData.DoesNotExist) as e:
+            messages.error(request, f"Reference lookup failed: {e}")
+
+        # Create the trip with properly parsed datetime objects
+        trip = APITripData(
+            vehicle_code=vehicle,
+            gprs_raw_code=gprs,
+            slip_id=request.POST["slip_id"],
+            before_weight=request.POST["before_weight"],
+            after_weight=request.POST["after_weight"],
+            time_in=time_in,
+            time_out=time_out,
+            site_name=request.POST["site_name"],
+            site_id=request.POST["site_id"],
+            lat=request.POST["lat"],
+            long=request.POST["long"],
+            trip_date=trip_date,
+            before_picture=request.FILES.get("before_picture"),
+            after_picture=request.FILES.get("after_picture"),
+            roof_before_picture=request.FILES.get("roof_before_picture"),
+            roof_after_picture=request.FILES.get("roof_after_picture"),
+        )
+
+        try:
+            trip.save()
+            messages.success(request, "Trip data saved successfully.")
+
+            # Get the ID of the newly created trip and send to PITB API
+            trip_id = trip.id
+            api_response = PostVTCSToPITBAPIById(trip_id)
+
+            # Add appropriate message based on API response
+            if api_response["status_code"] in [200, 201]:
+                messages.success(request, f"Trip data successfully sent to PITB API.")
+            elif api_response.get("already_sent", False):
+                messages.info(request, "Trip data was already sent to PITB API.")
+            else:
+                messages.warning(request,
+                                 f"Trip data saved but API transmission failed: {api_response['response_data']}")
+
+        except Exception as e:
+            messages.error(request, f"Error saving trip: {str(e)}")
+
+        # GET – render empty form
+    return render(request, template_name)
+
+
+### PUSH VTCS TRIP DATA TO PITB API BY USING TRIP ID
+def PostVTCSToPITBAPI(VTCS_id):
+    try:
+        # Find trips for this vehicle on this date
+        vehicle_data = APITripData.objects.filter(
+            id=VTCS_id
+        ).first()
+        print(f"Processing trip ID: {VTCS_id}, Found data: {vehicle_data is not None}")
+        if not vehicle_data:
+            return {
+                "status_code": 404,
+                "response_data": f"No trip data found for vehicle {VTCS_id}"
+            }
+        if vehicle_data.responce_status == "Success":
+            return {
+                "status_code": 200,
+                "response_data": f"Data for vehicle {VTCS_id} was already successfully sent to PITB",
+                "already_sent": True
+            }
+        # Prepare the base data without image fields
+        extracted_data = {
+            "vehicle_no": str(vehicle_data.vehicle_code.pitb_code),
+            "before_weight": float(vehicle_data.before_weight),
+            "after_weight": float(vehicle_data.after_weight),
+            "time_in": vehicle_data.time_in.strftime('%Y-%m-%d %H:%M:%S'),
+            "time_out": vehicle_data.time_out.strftime('%Y-%m-%d %H:%M:%S'),
+            "slip_id": str(vehicle_data.slip_id),
+            "lat": float(vehicle_data.lat),
+            "long": float(vehicle_data.long),
+            "site_name": str(vehicle_data.site_name),
+            "site_id": str(vehicle_data.site_id),
+            "data_id": int(vehicle_data.data_id) if vehicle_data.data_id is not None else None,
+        }
+
+        # Prepare files for multipart upload - these are required fields
+        files = {}
+
+        # Handle required image fields
+        if vehicle_data.before_picture:
+            files['before_picture'] = (
+                vehicle_data.before_picture.name,
+                vehicle_data.before_picture.file,
+                'image/jpeg'  # Adjust content type based on actual file type
+            )
+        else:
+            return {
+                "status_code": 400,
+                "response_data": "Missing required before_picture"
+            }
+
+        if vehicle_data.after_picture:
+            files['after_picture'] = (
+                vehicle_data.after_picture.name,
+                vehicle_data.after_picture.file,
+                'image/jpeg'  # Adjust content type based on actual file type
+            )
+        else:
+            return {
+                "status_code": 400,
+                "response_data": "Missing required after_picture"
+            }
+
+        # Handle optional image fields
+        if vehicle_data.roof_before_picture:
+            files['roof_before_picture'] = (
+                vehicle_data.roof_before_picture.name,
+                vehicle_data.roof_before_picture.file,
+                'image/jpeg'
+            )
+
+        if vehicle_data.roof_after_picture:
+            files['roof_after_picture'] = (
+                vehicle_data.roof_after_picture.name,
+                vehicle_data.roof_after_picture.file,
+                'image/jpeg'
+            )
+
+        api_url = "https://elgcd-ms.punjab.gov.pk/api/vtcs/post-trip-data"
+
+        headers = {
+            'accept': 'application/json',
+            'authkey': 'SGWMC-SaSg-MC4yMTUxODE0Nzk0MzA5MjY0NzAuMzM3Nzk4MzQ0Mjg1',
+            # 'Content-Type': 'multipart/form-data'
+        }
+
+        try:
+            response = requests.post(
+                url=api_url,
+                headers=headers,
+                data=extracted_data,
+                files=files,  # This will handle the multipart/form-data format correctly
+                timeout=30
+            )
+
+            # Handle response
+            response_data = None
+            try:
+                response_data = response.json() if response.status_code in [200, 201] else response.text
+            except ValueError:
+                response_data = response.text
+
+            # Update the APITripData record with the response information
+            if response.status_code in [200, 201]:
+                # Check if we have json data
+                if isinstance(response_data, dict):
+                    # Extract data_id from response if available
+                    data_id = response_data.get('data_id')
+                    message = response_data.get('message', '')
+                    # Debug before update
+                    print(f"Before update: status={vehicle_data.responce_status}, id={vehicle_data.responce_id}")
+
+                    # Update record fields
+                    vehicle_data.responce_id = data_id
+                    vehicle_data.responce_status = "Success"
+                    vehicle_data.remarks = message
+                    # Debug after field assignment but before save
+                    print(f"Assigned values: id={data_id}, status=Success, remarks={message}")
+                    vehicle_data.save()
+                    # Debug after save
+                    print(f"After save: status={vehicle_data.responce_status}, id={vehicle_data.responce_id}")
+                else:
+                    # Handle error case
+                    vehicle_data.responce_status = "Rejected"
+                    vehicle_data.remarks = str(response_data)
+                    vehicle_data.save()
+
+            return {
+                "status_code": response.status_code,
+                "response_data": response_data,
+            }
+        except requests.exceptions.RequestException as e:
+            # Update record with error information
+            vehicle_data.responce_status = "Rejected"
+            vehicle_data.remarks = f"API request failed: {str(e)}"
+            vehicle_data.save()
+
+            return {
+                "status_code": 500,
+                "response_data": f"API request failed: {str(e)}"
+            }
+        except ValueError as e:
+            # Update record with error information
+            vehicle_data.responce_status = "Rejected"
+            vehicle_data.remarks = f"Failed to parse API response: {str(e)}, Response text: {response.text}"
+            vehicle_data.save()
+
+            return {
+                "status_code": 500,
+                "response_data": f"Failed to parse API response: {str(e)}, Response text: {response.text}"
+            }
+
+    except Exception as e:
+        return {
+            "status_code": 500,
+            "response_data": f"Error: {str(e)}"
+        }
+
+
+# def post_vtcs_to_pitb_page(request):
+#     """View to render the PostVTCSToPitb.html template"""
+#     return render(request, 'PITBApi/PushVTCSTripData_Form.html')
+
+
+# PITB Data send by using id only
+
+def PostVTCSToPITBAPIById(VTCS_id):
+    try:
+        # Find trips for this vehicle on this date
+        vehicle_data = APITripData.objects.filter(
+            id=VTCS_id
+        ).first()
+
+        if not vehicle_data:
+            return {
+                "status_code": 404,
+                "response_data": f"No trip data found for vehicle {VTCS_id}"
+            }
+        if vehicle_data.response_status == "Success":
+            return {
+                "status_code": 200,
+                "response_data": f"Data for vehicle {VTCS_id} was already successfully sent to PITB",
+                "already_sent": True
+            }
+            # Prepare the base data without image fields
+        extracted_data = {
+            "vehicle_no": str(vehicle_data.vehicle_code.pitb_code),
+            "before_weight": float(vehicle_data.before_weight),
+            "after_weight": float(vehicle_data.after_weight),
+            "time_in": vehicle_data.time_in.strftime('%Y-%m-%d %H:%M:%S'),
+            "time_out": vehicle_data.time_out.strftime('%Y-%m-%d %H:%M:%S'),
+            "slip_id": str(vehicle_data.slip_id),
+            "lat": float(vehicle_data.lat),
+            "long": float(vehicle_data.long),
+            "site_name": str(vehicle_data.site_name),
+            "site_id": str(vehicle_data.site_id),
+            "data_id": int(vehicle_data.data_id) if vehicle_data.data_id is not None else None,
+        }
+
+        # Add uuid if available
+        if hasattr(vehicle_data, 'uuid') and vehicle_data.uuid:
+            extracted_data["uuid"] = str(vehicle_data.uuid)
+
+        # Prepare files for multipart upload - these are required fields
+        files = {}
+
+        # Handle required image fields
+        if vehicle_data.before_picture:
+            files['before_picture'] = (
+                vehicle_data.before_picture.name,
+                vehicle_data.before_picture.file,
+                'image/jpeg'  # Adjust content type based on actual file type
+            )
+        else:
+            return {
+                "status_code": 400,
+                "response_data": "Missing required before_picture"
+            }
+
+        if vehicle_data.after_picture:
+            files['after_picture'] = (
+                vehicle_data.after_picture.name,
+                vehicle_data.after_picture.file,
+                'image/jpeg'  # Adjust content type based on actual file type
+            )
+        else:
+            return {
+                "status_code": 400,
+                "response_data": "Missing required after_picture"
+            }
+
+        # Handle optional image fields
+        if vehicle_data.roof_before_picture:
+            files['roof_before_picture'] = (
+                vehicle_data.roof_before_picture.name,
+                vehicle_data.roof_before_picture.file,
+                'image/jpeg'
+            )
+
+        if vehicle_data.roof_after_picture:
+            files['roof_after_picture'] = (
+                vehicle_data.roof_after_picture.name,
+                vehicle_data.roof_after_picture.file,
+                'image/jpeg'
+            )
+
+        api_url = "https://elgcd-ms.punjab.gov.pk/api/vtcs/post-trip-data"
+
+        headers = {
+            'accept': 'application/json',
+            'authkey': 'SGWMC-SaSg-MC4yMTUxODE0Nzk0MzA5MjY0NzAuMzM3Nzk4MzQ0Mjg1',
+            # 'Content-Type': 'multipart/form-data'
+        }
+
+        try:
+            response = requests.post(
+                url=api_url,
+                headers=headers,
+                data=extracted_data,
+                files=files,  # This will handle the multipart/form-data format correctly
+                timeout=30
+            )
+
+            # Handle response
+            response_data = None
+            try:
+                response_data = response.json() if response.status_code in [200, 201] else response.text
+            except ValueError:
+                response_data = response.text
+
+            # Update the APITripData record with the response information
+            if response.status_code in [200, 201]:
+                # Check if we have json data
+                if isinstance(response_data, dict):
+                    # Extract data_id from response if available
+                    data_id = response_data.get('data_id')
+                    message = response_data.get('message', '')
+
+                    # Update record fields
+                    vehicle_data.response_id = data_id
+                    vehicle_data.response_status = "Success"
+                    vehicle_data.remarks = message
+                    vehicle_data.save()
+                else:
+                    # Handle error case
+                    vehicle_data.response_status = "Rejected"
+                    vehicle_data.remarks = str(response_data)
+                    vehicle_data.save()
+
+            return {
+                "status_code": response.status_code,
+                "response_data": response_data,
+            }
+        except requests.exceptions.RequestException as e:
+            # Update record with error information
+            vehicle_data.response_status = "Rejected"
+            vehicle_data.remarks = f"API request failed: {str(e)}"
+            vehicle_data.save()
+
+            return {
+                "status_code": 500,
+                "response_data": f"API request failed: {str(e)}"
+            }
+        except ValueError as e:
+            # Update record with error information
+            vehicle_data.response_status = "Rejected"
+            vehicle_data.remarks = f"Failed to parse API response: {str(e)}, Response text: {response.text}"
+            vehicle_data.save()
+
+            return {
+                "status_code": 500,
+                "response_data": f"Failed to parse API response: {str(e)}, Response text: {response.text}"
+            }
+
+    except Exception as e:
+        return {
+            "status_code": 500,
+            "response_data": f"Error: {str(e)}"
+        }

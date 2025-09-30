@@ -1,0 +1,680 @@
+{% extends "master.html" %}
+{% load static %}
+{% load urlify %}
+{% load humanize %}
+
+{% block title %}Tracker History Report{% endblock %}
+
+<!-- Custom Plugins CSS -->
+{% block PluginsCSS %}
+
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/flatpickr/flatpickr.min.css" %}">
+
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/responsive.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/jquery.dataTables.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/dataTables.bootstrap5.css" %}">
+
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select/bootstrap-select.min.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/sweetalert2.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/prism.css" %}">
+
+{% endblock %}
+<!--End Custom Plugins CSS -->
+
+<!-- Header Page Hierarchy-->
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3>Vehicle</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/">
+                            <svg class="stroke-icon">
+                            </svg>
+                        </a></li>
+                        <li class="breadcrumb-item active">Tracker History Report</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+<!-- Header Page Hierarchy-->
+
+
+{% block content %}
+    <!-- Container-fluid starts-->
+    <div class="container-fluid main-companies">
+
+        <!-- Add messages display here -->
+        <div class="row">
+            <div class="col-12">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            <strong>
+                                {% if message.tags == 'success' %}
+                                    <i class="fa fa-check-circle"></i> Success!
+                                {% elif message.tags == 'warning' %}
+                                    <i class="fa fa-exclamation-triangle"></i> Notice!
+                                {% elif message.tags == 'error' %}
+                                    <i class="fa fa-times-circle"></i> Error!
+                                {% else %}
+                                    <i class="fa fa-info-circle"></i> Info!
+                                {% endif %}
+                            </strong>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+
+        <div class="row">
+
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+
+                        <style>
+                            .form-control {
+                                padding: 0.25rem 0.65rem;
+                            }
+                        </style>
+
+                        <form id="dateRangeForm" class="form form-horizontal" action=""
+                              method="post" accept-charset='utf-8'
+                              enctype="multipart/form-data">
+
+                            {% csrf_token %}
+                            <div class="row g-3 custom-input">
+                                <div class="col-xl col-md-6">
+                                    <label class="form-label">Vehicle With Type</label>
+                                    <select id="cmd_vehicle_type"
+                                            name="cmd_vehicle_type"
+                                            class="selectpicker"
+                                            data-live-search="true">
+                                        <option value="" selected>Choose One</option>
+                                        {% for type in vehicle_type_list %}
+                                            <option value="{{ type.vehicle_type }}"
+                                                    {% if selected_vehicle_type == type.vehicle_type %}selected{% endif %}>
+                                                {{ type.vehicle_type }}
+                                                - {{ type.count }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-xl col-md-6">
+                                    <label class="form-label" for="vehicle_code">Vehicle Code</label>
+                                    <select id="cmd_vehicle_list"
+                                            name="cmd_vehicle_list" class="selectpicker"
+                                            data-live-search="true" data-size="10">
+                                        <option value=""
+                                                {% if not selected_vehicle_code %}selected{% endif %}>
+                                            Choose One
+                                        </option>
+                                        {% for vehicle in cmd_vehicle_data %}
+                                            <option value="{{ vehicle.vehicle_code }}"
+                                                    {% if selected_vehicle_code == vehicle.vehicle_code %}selected{% endif %}>
+                                                {% if vehicle.register_no == "APL-4" %}
+                                                    {{ vehicle.chasis_no }}
+                                                {% else %}
+                                                    {{ vehicle.register_no }}
+                                                {% endif %}
+                                                ({{ vehicle.pitb_code }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-xl col-md-6">
+                                    <label class="form-label" for="vehicle_code">Status</label>
+                                    <select id="status"
+                                            name="status" class="selectpicker"
+                                            data-live-search="true" data-size="10">
+                                        <option value=""
+                                                {% if not selected_status %}selected{% endif %}>
+                                            Choose One
+                                        </option>
+
+                                        <option value="Working"
+                                                {% if selected_status == 'Working' %}selected{% endif %}>
+                                            Working
+                                        </option>
+
+                                        <option value="Offline"
+                                                {% if selected_status == 'Offline' %}selected{% endif %}>
+                                            Offline
+                                        </option>
+
+                                    </select>
+                                </div>
+
+                                <div class="col-xl col-md-6">
+                                    <label class="form-label" for="date">Date</label>
+                                    <div class="input-group flatpicker-calender">
+                                        <input class="form-control" id="get_selected_date" name="get_selected_date"
+                                               type="date" value="{{ get_selected_date }}">
+                                    </div>
+                                </div>
+
+                                <div class="col d-flex justify-content-start align-items-center m-t-40">
+                                    <button type="submit" class="btn btn-primary f-w-500">Submit</button>
+                                </div>
+                                <div class="col d-flex justify-content-start align-items-center m-t-40">
+                                    <button id="exportExcelButton" class="btn btn-primary">Generate Excel</button>
+                                </div>
+
+                            </div>
+
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="row general-widget-wrapper">
+
+            <style>
+                .course-box .card-body {
+                    padding: 22px 15px;
+                }
+            </style>
+
+            <div class="col-sm-12 col-xl-7 col-lg-7 box-col-7">
+                <div class="row">
+                    <div class="col-sm-12 col-xl-4 col-lg-4 box-col-4">
+                        <div class="card course-box">
+                            <div class="card-body">
+                                <div class="course-widget">
+                                    <div class="course-icon all">
+                                        <svg class="fill-icon">
+                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="mb-0">
+                                            <span id="summary_total_vehicle">{{ total_distance }} KM</span>
+                                        </h4>
+                                        <span class="f-light">Total Distance</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="square-group">
+                                <li class="square-1 warning"></li>
+                                <li class="square-1 primary"></li>
+                                <li class="square-2 warning1"></li>
+                                <li class="square-3 danger"></li>
+                                <li class="square-4 light"></li>
+                                <li class="square-5 warning"></li>
+                                <li class="square-6 success"></li>
+                                <li class="square-7 success"></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-xl-4 col-lg-4 box-col-4">
+                        <div class="card course-box">
+                            <div class="card-body">
+                                <div class="course-widget">
+                                    <div class="course-icon success">
+                                        <svg class="fill-icon">
+                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="mb-0">
+                                            <span id="summary_moving_vehicle">{{ working_hours }}</span>
+                                        </h4>
+                                        <span class="f-light">Working Hours</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="square-group">
+                                <li class="square-1 warning"></li>
+                                <li class="square-1 primary"></li>
+                                <li class="square-2 warning1"></li>
+                                <li class="square-3 danger"></li>
+                                <li class="square-4 light"></li>
+                                <li class="square-5 warning"></li>
+                                <li class="square-6 success"></li>
+                                <li class="square-7 success"></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-xl-4 col-lg-4 box-col-4">
+                        <div class="card course-box">
+                            <div class="card-body">
+                                <div class="course-widget">
+                                    <div class="course-icon info">
+                                        <svg class="fill-icon">
+                                            <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="mb-0">
+                                            <span id="summary_idle_vehicle">Threshold</span>
+                                        </h4>
+                                        <span class="f-light">
+                                {% if threshold == 'Yes' %}
+                                    <span class='badge badge-success'>Completed</span>
+                                {% else %}
+                                    <span class='badge badge-warning'>Pending</span>
+                                {% endif %}
+                              </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="square-group">
+                                <li class="square-1 warning"></li>
+                                <li class="square-1 primary"></li>
+                                <li class="square-2 warning1"></li>
+                                <li class="square-3 danger"></li>
+                                <li class="square-4 light"></li>
+                                <li class="square-5 warning"></li>
+                                <li class="square-6 success"></li>
+                                <li class="square-7 success"></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-12 col-xl-5 col-lg-5 box-col-5">
+                <div class="row">
+                    <div class="col-sm-12 col-xl-12 col-lg-12 box-col-12">
+                        <div class="card">
+                            <div class="card-body" style="padding: 5px;">
+
+                                <div class="main-divider">
+                                    <div class="divider-body divider-body-1 divider-primary">
+                                        <div class="divider-p-primary">
+                                            <i class="fa-solid fa-recycle me-2 txt-primary f-20"></i>
+                                            <span class="txt-primary">Define Duration For Sync Location's</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <form id="syncForm" action="" method="post">
+                                    <div class="row">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="cmd_vehicle_list" value="{{ selected_vehicle_code }}">
+                                        <input type="hidden" name="status" value="{{ selected_status }}">
+                                        <input type="hidden" name="vehicle_type" value="{{ selected_vehicle_type }}">
+                                        <input type="hidden" name="get_selected_date" value="{{ get_selected_date }}">
+
+                                        <div class="col-xxl-5 col-sm-6 box-col-6 pt-2">
+                                            <div class="row">
+                                                <label class="col-xxl-6 box-col-12 text-end pt-1">
+                                                    Start Time:</label>
+                                                <div class="col-xxl-6 box-col-12">
+                                                    <div class="input-group flatpicker-calender">
+                                                        <input type="time" id="get_from_time" name="get_from_time" step="1"
+                                                            required>
+                                                        {#                                                    <input class="form-control" id="preloading-start-time"#}
+                                                        {#                                                           type="time">#}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-xxl-5 col-sm-6 box-col-6 pt-2">
+                                            <div class="row">
+                                                <label class="col-xxl-6 box-col-12 text-end pt-1">
+                                                    End Time:</label>
+                                                <div class="col-xxl-6 box-col-12">
+                                                    <div class="input-group flatpicker-calender">
+                                                        {#                                                    <input class="form-control" id="preloading-start-time"#}
+                                                        {#                                                           type="time">#}
+                                                        <input type="time" id="get_to_time" name="get_to_time" step="1"
+                                                            required>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-xxl-2 col-sm-6 box-col-6">
+                                            <div class="pulse-wrapper main-animate pulse-rabbet"
+                                                style="text-align: -webkit-center;">
+                                                <a class="bg-light-primary" href="#"
+                                                id="btn_syn_vendor_tracker_raw" type="submit">
+                                                    <svg class="stroke-primary">
+                                                        <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-table"></use>
+                                                    </svg>
+                                                </a>
+
+
+                                                {#                                            <button id="btn_syn_vendor_tracker_raw" type="submit"#}
+                                                {#                                                    class="btn btn-primary push-pitb-btn"#}
+                                                {#                                                    data-bs-toggle="tooltip" data-bs-placement="top"#}
+                                                {#                                                    data-bs-title="Sync to System">#}
+                                                {#                                                <i class="fa fa-upload"></i>#}
+                                                {#                                            </button>#}
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            {#            <div class="col-sm-4 col-xl-4 col-lg-4 box-col-4">#}
+            {#                <div class="card course-box">#}
+            {#                    <div class="card-body">#}
+            {#                        <div class="course-widget">#}
+            {#                            <div class="course-icon info">#}
+            {#                                <svg class="fill-icon">#}
+            {#                                    <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-progress-delivery"></use>#}
+            {#                                </svg>#}
+            {#                            </div>#}
+            {#                            <div>#}
+            {#                                <h4 class="mb-0">#}
+            {#                                    <span id="summary_idle_vehicle">Manual Sync</span>#}
+            {#                                </h4>#}
+            {#                                <form id="" action="" method="post">#}
+            {#                                    {% csrf_token %}#}
+            {#                                    <input type="hidden" name="cmd_vehicle_list" value="{{ selected_vehicle_code }}">#}
+            {#                                    <label class="form-label" for="get_selected_date">Date</label>#}
+            {#                                    <input type="date" id="get_selected_date" name="get_selected_date" required>#}
+            {##}
+            {#                                    <label class="form-label" for="get_from_time">From time</label>#}
+            {#                                    <input type="time" id="get_from_time" name="get_from_time" step="1" required>#}
+            {##}
+            {#                                    <label class="form-label" for="get_to_time">To Time</label>#}
+            {#                                    <input type="time" id="get_to_time" name="get_to_time" step="1" required>#}
+            {##}
+            {#                                    <button id="btn_syn_vendor_tracker_raw" type="submit"#}
+            {#                                            class="btn btn-primary push-pitb-btn"#}
+            {#                                            data-bs-toggle="tooltip" data-bs-placement="top"#}
+            {#                                            data-bs-title="Sync to System">#}
+            {#                                        <i class="fa fa-upload"></i>#}
+            {#                                    </button>#}
+            {##}
+            {#                                </form>#}
+            {#                            </div>#}
+            {#                        </div>#}
+            {#                    </div>#}
+            {#                    <ul class="square-group">#}
+            {#                        <li class="square-1 warning"></li>#}
+            {#                        <li class="square-1 primary"></li>#}
+            {#                        <li class="square-2 warning1"></li>#}
+            {#                        <li class="square-3 danger"></li>#}
+            {#                        <li class="square-4 light"></li>#}
+            {#                        <li class="square-5 warning"></li>#}
+            {#                        <li class="square-6 success"></li>#}
+            {#                        <li class="square-7 success"></li>#}
+            {#                    </ul>#}
+            {#                </div>#}
+            {#            </div>#}
+
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+
+                        <style>
+
+                            .support-ticket-table thead tr th:first-child, .support-ticket-table thead tr td:first-child, .support-ticket-table tbody tr th:first-child, .support-ticket-table tbody tr td:first-child {
+                                min-width: 50px;
+                            }
+
+                            .support-ticket-table thead tr th:nth-child(2), .support-ticket-table thead tr td:nth-child(2), .support-ticket-table tbody tr th:nth-child(2), .support-ticket-table tbody tr td:nth-child(2) {
+                                min-width: 150px;
+                            }
+
+                            .badge {
+                                padding: 0.75em 0.75em;
+                            }
+
+                        </style>
+
+                        {% if tracker_history_json %}
+                            <div class="table-responsive support-ticket-table custom-scrollbar">
+                                <table class="display border table-striped" id="basic-6">
+                                    <thead>
+                                    <tr>
+                                        <th rowspan="2">#</th>
+                                        <th rowspan="2">Name</th>
+                                        <th colspan="4">Vehicle-Info</th>
+                                        <th colspan="3">For PITB</th>
+                                        <th colspan="2">Geo-Information</th>
+                                        <th colspan="2">Battery-Info</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Acc</th>
+                                        <th>Timestamp</th>
+                                        <th>Status</th>
+                                        <th>Speed</th>
+                                        <th>Distance</th>
+                                        <th>Working</th>
+                                        <th>Status</th>
+                                        <th>Coordinate</th>
+                                        <th>Landmark</th>
+                                        <th>Int.</th>
+                                        <th>Ext.</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for data in tracker_history_json %}
+                                        {% if data.status == "MISSING DATA" %}
+
+                                            {#                                            onclick="Cred_Driver_ShowModel('UPDATE,{{ driver.id }},{{ driver.name }},{{ driver.cnic }},{{ driver.license_no }},{{ driver.license_expiry|date:'Y-m-d' }},{{ driver.phone_number }}');"#}
+
+                                            <tr style="background: #ffe2e2;">
+                                                <th scope="row"
+                                                    class="xsm-text text-capitalize align-middle text-center">
+                                                    {{ forloop.counter }}
+                                                </th>
+                                                <td>
+                                                    <div class="d-flex">
+                                                        <div class="flex-grow-1 align-self-center">
+                                                            <div>Type - {{ data.vehicle_code }}
+                                                                - PITB Code
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ data.prev_vendor_date_time }}</td>
+                                                <td>{{ data.current_vendor_date_time }}</td>
+                                                <td>
+                                                    <span class="badge badge-light-danger">
+                                                        <h5 class="txt-danger">{{ data.status }}</h5>
+                                                    </span>
+                                                </td>
+                                                <td></td>
+                                                <td></td>
+                                                <td>
+
+                                                </td>
+                                                <td>
+                                                </td>
+                                                <td>{{ data.lat }} - {{ data.lon }}</td>
+                                                <td>
+                                                    <div class="d-flex gap-1">
+
+                                                        <form id="syncForm" action="" method="post">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="cmd_vehicle_list"
+                                                                   value="{{ data.vehicle_code }}">
+                                                            <input type="hidden" name="status"
+                                                                   value="{{ data.selected_status }}">
+                                                            <input type="hidden" name="get_from_time"
+                                                                   value="{{ data.get_from_time }}">
+                                                            <input type="hidden" name="get_to_time"
+                                                                   value="{{ data.get_to_time }}">
+                                                            <input type="hidden" name="vehicle_type"
+                                                                   value="{{ selected_vehicle_type }}">
+                                                            <input type="hidden" name="get_selected_date"
+                                                                   value="{{ get_selected_date }}">
+
+                                                            <button id="btn_syn_vendor_tracker_raw" type="submit"
+                                                                    class="btn btn-primary push-pitb-btn"
+                                                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                                                    data-bs-title="Sync to System">
+                                                                <i class="fa fa-upload"></i>
+                                                            </button>
+
+                                                        </form>
+
+                                                    </div>
+                                                <td>
+                                                <td></td>
+                                            </tr>
+                                        {% else %}
+                                            <tr>
+                                                <th scope="row"
+                                                    class="xsm-text text-capitalize align-middle text-center">
+                                                    {{ forloop.counter }}
+                                                </th>
+                                                <td>
+                                                    <div class="d-flex">
+                                                        <div class="flex-grow-1 align-self-center">
+                                                            <div>Type - {{ data.vehicle_code }}
+                                                                - PITB Code
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ data.acc_status }}</td>
+                                                <td>{{ data.vendor_date_time }}</td>
+                                                <td>{{ data.status }}</td>
+                                                <td>{{ data.speed }}</td>
+                                                <td><span
+                                                        class="badge badge-light-success">{{ data.distance|default:"0.0" }}-KM</span>
+                                                </td>
+                                                <td><span
+                                                        class="badge badge-light-primary">{{ data.working_hour|default:"00H:00M" }}</span>
+                                                </td>
+                                                <td>
+                                                    {% if data.status == "Yes" %}
+                                                        <span class="badge badge-light-success">Completed</span>
+                                                    {% else %}
+                                                        <span class="badge badge-light-danger">Pending</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ data.lat }} - {{ data.lon }}</td>
+                                                <td>{{ data.location }}</td>
+                                                <td>{{ data.int_bat_voltage }}</td>
+                                                <td>{{ data.ext_bat_voltage }}</td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h4 class="mb-3">Please Select Filters</h4>
+                                        <p class="text-muted">Select filters above to view tracker history
+                                            report and analysis.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- Container-fluid Ends-->
+
+{% endblock %}
+
+<!-- Plugins JS start-->
+{% block PluginsJS %}
+
+    <script src="{% static "assets/js/counter/counter-custom.js" %}"></script>
+
+    <script src="{% static "assets/js/datatable/datatables/jquery.dataTables.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables1.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.bootstrap5.js" %}"></script>
+
+    <script src="{% static "assets/js/datatable/datatables/dataTables.select.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/select.bootstrap5.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/datatable.custom.js" %}"></script>
+    <script src="{% static "assets/js/sweet-alert/sweetalert.min.js" %}"></script>
+
+    <script src="{% static "assets/js/flat-pickr/flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/flat-pickr/custom-flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/select/bootstrap-select.min.js" %}"></script>
+    <script src="{% static "assets/js/tooltip-init.js" %}"></script>
+
+    <script src="{% static "assets/js/support-ticket-custom.js" %}"></script>
+
+    <script src="{% static "assets/js/prism/prism.min.js" %}"></script>
+    <script src="{% static "assets/js/clipboard/clipboard.min.js" %}"></script>
+    <script src="{% static "assets/js/custom-card/custom-card.js" %}"></script>
+    <script src="{% static "assets/js/height-equal.js" %}"></script>
+
+{% endblock %}
+<!-- Plugins JS Ends-->
+
+<!-- Custom JS -->
+{% block CustomerJS %}
+
+    <script src="{% static "assets/app_js/VehicleModel.js" %}" type="text/javascript"></script>
+
+    <script>
+
+        let VehicleModelJS = null;
+
+        let vehicle_list_with_type_code = '{% url "VehicleListWithTypeCode" %}';
+
+        $(document).ready(function () {
+
+            VehicleModelJS = new AppVehicleModel();
+            VehicleModelJS.appConstructor();
+
+            //// ONCHANGE FUNCTION FILL VEHICLE LIST
+            $("#cmd_vehicle_type").change(function (e) {
+                let selected_value = e.target.value;
+                //// FETCH VEHICLE LIST BY VEHICLE TYPE
+                VehicleModelJS.VehicleListWithTypeCodeView("cmd_vehicle_list", selected_value, "None", "");
+            });
+
+        }); //// DOCUMENT READY CLOSE
+
+        // Handle form submission FILTER PARAMETER
+        $('#dateRangeForm').on('submit', function (e) {
+            const cmd_vehicle_type = $('#cmd_vehicle_type').val();
+            const cmd_vehicle_list = $('#cmd_vehicle_list').val();
+            const get_selected_date = $('#get_selected_date').val();
+            debugger;
+
+            const hasFilters = (cmd_vehicle_type || (cmd_vehicle_list && get_selected_date))
+
+            if (!hasFilters) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Filter Required',
+                    text: 'Please select filters before proceeding.',
+                    icon: 'warning',
+                    confirmButtonText: 'OK'
+                });
+                return false;
+            }
+        });
+
+        //// FORM VALIDATION (START)
+        $("#btn_syn_vendor_tracker_raw").click(function () {
+            $("#syncForm").submit(); // Submit the form
+        });
+        //// FORM VALIDATION (END)
+
+    </script>
+
+{% endblock %}
+<!-- End Custom JS -->

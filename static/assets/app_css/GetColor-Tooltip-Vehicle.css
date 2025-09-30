@@ -1,0 +1,96 @@
+
+.leaflet-popup-tip {
+    width: 0px;
+    height: 0px;
+}
+
+.leaflet-popup-content-wrapper {
+    border-radius: 5px;
+}
+
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+    background-color: rgba(24, 35, 60, 0.6);
+    border: 1px solid #D8B83C;
+    color: white;
+    font-size: 13px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.leaflet-popup-content {
+    margin: 3px 3px;
+    width: auto !important;
+}
+
+.leaflet-popup-tip-container {
+    height: 15px;
+}
+
+.leaflet-popup-close-button {
+    display: none;
+}
+
+.leaflet-tooltip {
+    background-color: rgba(153, 146, 252, 0.3);
+    color: #333333;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid #7366ff;
+}
+
+.leaflet-tooltip-veh-moving {
+    background-color: rgba(200, 252, 194, 0.3);
+    color: #333333;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 14px;
+    font-weight: bolder;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid #65c15c;
+}
+
+.leaflet-tooltip-veh-idle {
+    background-color: rgba(44, 172, 236, 0.3);
+    color: #333333;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 14px;
+    font-weight: bolder;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid #2cacec;
+}
+
+.leaflet-tooltip-veh-park {
+    background-color: rgba(255, 169, 65, 0.3);
+    color: #333333;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 14px;
+    font-weight: bolder;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid #FFA941;
+}
+
+.leaflet-tooltip-veh-offline {
+    background-color: rgba(131, 131, 131, 0.3);
+    color: #333333;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 14px;
+    font-weight: bolder;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid #838383;
+}
+
+.polygon-label {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    font-weight: bold;
+    font-size: 14px;
+    color: #ff2b2b;
+    text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff;
+    pointer-events: none;
+}

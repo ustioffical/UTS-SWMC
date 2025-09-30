@@ -1,0 +1,331 @@
+{% extends "master.html" %}
+{% load static %}
+
+{% block title %}Vehicle Threshold Data{% endblock %}
+
+{% block PluginsCSS %}
+    <!-- DataTables & SelectPicker & SweetAlert (same as VehicleMonitoring) -->
+    <link rel="stylesheet" href="{% static 'assets/css/vendors/jquery.dataTables.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/vendors/select.bootstrap5.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/vendors/sweetalert2.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/vendors/select/bootstrap-select.min.css' %}">
+{% endblock %}
+
+{% block css %}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .button-container {
+            margin-bottom: 20px;
+        }
+
+        .toggle-button {
+            padding: 8px 16px;
+            background-color: #f2f2f2;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            margin-right: 10px;
+            border-radius: 4px;
+        }
+
+        .toggle-button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .table-container {
+            display: none;
+        }
+
+        .table-container.active {
+            display: block;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        h2 {
+            margin-top: 30px;
+            color: #333;
+        }
+
+        /* Styling for filter section */
+        .filter-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #dee2e6;
+        }
+
+        .filter-section .form-group {
+            margin-bottom: 10px;
+        }
+
+        .filter-section select,
+        .filter-section input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+
+        .filter-section button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .filter-section button:hover {
+            background-color: #45a049;
+        }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .filter-col {
+            flex: 1;
+            min-width: 200px;
+        }
+    </style>
+{% endblock %}
+
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3>Vehicle Threshold</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="/index">
+                                <svg class="stroke-icon">
+                                    <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                                </svg>
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item">Vehicle</li>
+                        <li class="breadcrumb-item active">Threshold</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="card">
+                    <div class="card-header pb-0">
+                        <h5>Vehicle Threshold Data</h5>
+                        <span>View and analyze vehicle threshold metrics</span>
+                    </div>
+                    <div class="card-body">
+
+                        <div style="text-align:center; margin-bottom:1em;">
+                            <button id="exportExcelButton" class="btn btn-primary">Generate Excel</button>
+                        </div>
+
+                        <div class="button-container">
+                            <button class="toggle-button active" onclick="showTable('single')">Single</button>
+                            <button class="toggle-button" onclick="showTable('group')">Group</button>
+                        </div>
+
+                        <!-- FILTER FORM FOR SINGLE -->
+                        <div id="single-filter" class="filter-section">
+                            <form method="get" class="needs-validation">
+                                <div class="filter-row">
+                                    <div class="filter-col">
+                                        <div class="form-group">
+                                            <label for="vehicle_type">Vehicle Type:</label>
+                                            <select id="cmd_vehicle_type"
+                                                    name="cmd_vehicle_type" class="selectpicker"
+                                                    data-live-search="true">
+                                                <option value="NA"
+                                                        {% if not filtered_vehicle_type %}selected{% endif %}>
+                                                    Choose One
+                                                </option>
+                                                {% for type in vehicle_type_list %}
+                                                    <option value="{{ type.vehicle_type }}"
+                                                            {% if filtered_vehicle_type == type.vehicle_type %}selected{% endif %}>
+                                                        {{ type.vehicle_type }} -
+                                                        ({{ type.count }})
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                            {#                      <select class="form-select" name="vehicle_type" id="vehicle_type" required>#}
+                                            {#                        <option value="">-- choose --</option>#}
+                                            {#                        {% for vt in vehicle_type_list %}#}
+                                            {#                          <option value="{{ vt.vehicle_type_name }}"#}
+                                            {#                            {% if request.GET.vehicle_type == vt.vehicle_type_name %}selected{% endif %}>#}
+                                            {#                            {{ vt.vehicle_type_name }}#}
+                                            {#                          </option>#}
+                                            {#                        {% endfor %}#}
+                                            {#                      </select>#}
+                                        </div>
+                                    </div>
+                                    <div class="filter-col">
+                                        <div class="form-group">
+                                            <label for="start_date">Start Date:</label>
+                                            <input type="date" class="form-control" name="start_date" id="start_date"
+                                                   value="{{ request.GET.start_date|default:today }}">
+                                        </div>
+                                    </div>
+                                    <div class="filter-col">
+                                        <div class="form-group">
+                                            <label for="end_date">End Date:</label>
+                                            <input type="date" class="form-control" name="end_date" id="end_date"
+                                                   value="{{ request.GET.end_date|default:today }}">
+                                        </div>
+                                    </div>
+                                    <div class="filter-col" style="display: flex; align-items: flex-end;">
+                                        <button type="submit" class="btn btn-primary">Filter</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Single Vehicle Table -->
+                        <div id="single-table" class="table-container active">
+                            <h2>Single Vehicle Data</h2>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                    <tr>
+                                        <th>Vehicle Type</th>
+                                        <th>Vehicle Code</th>
+                                        <th>Date</th>
+                                        <th>Distance (km)</th>
+                                        <th>Distance (m)</th>
+                                        <th>Ignition</th>
+                                        <th>Working Hours</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% if single_vehicle_threshold %}
+                                        {% for v in single_vehicle_threshold %}
+                                            <tr>
+                                                <td>{{ v.vehicle_type }}</td>
+                                                <td>{{ v.vehicle_code.vehicle_code }}</td>
+                                                <td>{{ v.vendor_date_time|date:"Y-m-d" }}</td>
+                                                <td>{{ v.distance_km }}</td>
+                                                <td>{{ v.distance_m }}</td>
+                                                <td>{{ v.ignition }}</td>
+                                                <td>{{ v.working_hours }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="7" class="text-center">
+                                                {% if request.GET.vehicle_type and request.GET.start_date and request.GET.end_date %}
+                                                    No data found for that filter.
+                                                {% else %}
+                                                    Please select vehicle type &amp; date range above and hit Filter.
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Group Vehicle Table -->
+                        <div id="group-table" class="table-container">
+                            <h2>Grouped Vehicle Data</h2>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                    <tr>
+                                        <th>Vehicle Type</th>
+                                        <th>Total Distance (km)</th>
+                                        <th>Total Distance (m)</th>
+                                        <th>Ignition</th>
+                                        <th>Total Working Hours</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for group in vehicle_threshold_group %}
+                                        <tr>
+                                            <td>{{ group.vehicle_type }}</td>
+                                            <td>{{ group.total_distance_km }}</td>
+                                            <td>{{ group.total_distance_m }}</td>
+                                            <td>{{ group.ignition }}</td>
+                                            <td>{{ group.total_working_hours }}</td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center">No grouped vehicle data available.</td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block PluginsJS %}
+    <!-- DataTables, SweetAlert, Flatpickr & Bootstrap-Select JS -->
+    <script src="{% static 'assets/js/datatable/datatables/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'assets/js/datatable/datatables/dataTables.js' %}"></script>
+    <script src="{% static 'assets/js/datatable/datatables/dataTables.select.js' %}"></script>
+    <script src="{% static 'assets/js/datatable/datatables/select.bootstrap5.js' %}"></script>
+    <script src="{% static 'assets/js/datatable/datatables/datatable.custom.js' %}"></script>
+    <script src="{% static 'assets/js/sweet-alert/sweetalert.min.js' %}"></script>
+    <script src="{% static 'assets/js/flat-pickr/flatpickr.js' %}"></script>
+    <script src="{% static 'assets/js/flat-pickr/custom-flatpickr.js' %}"></script>
+    <script src="{% static 'assets/js/select/bootstrap-select.min.js' %}"></script>
+{% endblock %}
+
+{% block CustomerJS %}
+    <script>
+        function showTable(tableType) {
+            document.querySelectorAll('.table-container').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.toggle-button').forEach(b => b.classList.remove('active'));
+            document.getElementById(tableType + '-table').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        document.getElementById('exportExcelButton').addEventListener('click', function () {
+            const tableType = document.querySelector('.table-container.active').id === 'single-table' ? 'single' : 'group';
+            const params = new URLSearchParams(location.search);
+            params.set('tableType', tableType);
+            ['vehicle_type', 'start_date', 'end_date'].forEach(k => {
+                const v = document.querySelector(`[name="${k}"]`)?.value;
+                if (v) params.set(k, v);
+            });
+            window.location.href = "{% url 'export_threshold_excel' %}?" + params.toString();
+        });
+    </script>
+{% endblock %}

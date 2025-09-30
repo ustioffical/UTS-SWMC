@@ -1,0 +1,427 @@
+{% extends "master.html" %}
+{% load static %}
+
+{% block title %}Complaint Management{% endblock %}
+
+<!-- Custom Plugins CSS -->
+{% block PluginsCSS %}
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/jquery.dataTables.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select.bootstrap5.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/sweetalert2.css" %}">
+    <link rel="stylesheet" type="text/css" href="{% static "assets/css/vendors/select/bootstrap-select.min.css" %}">
+{% endblock %}
+<!--End Custom Plugins CSS -->
+
+{% block LeafletLink %}
+    <!--Google Key-->
+    <script type="text/javascript"
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDyN4NVgaHV6-AbuAdWqSBM07iay6gbfKc&libraries=places"></script>
+
+    <!--leaflet js library style link -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+          integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+          crossorigin=""/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.css' %}"/>
+    <link rel="stylesheet"
+          href="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.css' %}"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+{% endblock %}
+
+{% block css %}
+    .complaint-card {
+        border-left: 4px solid #007bff;
+        margin-bottom: 1rem;
+        transition: transform 0.2s;
+    }
+    .complaint-card:hover {
+        transform: translateY(-2px);
+    }
+    .complaint-card.pending {
+        border-left-color: #ffc107;
+    }
+    .complaint-card.completed {
+        border-left-color: #28a745;
+    }
+    .status-badge {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+    .update-form {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    .btn-action {
+        margin: 0.2rem;
+    }
+    .stats-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+    .complaint-meta {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .no-complaints {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+    .pagination-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 5px;
+    }
+    .pagination-info {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .pagination .page-link {
+        color: #667eea;
+        border-color: #dee2e6;
+    }
+    .pagination .page-link:hover {
+        color: #5a6fd8;
+        background-color: #e9ecef;
+        border-color: #dee2e6;
+    }
+    .pagination .page-item.active .page-link {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    .border-tb-l-radius {
+        border-top-left-radius: 5px !important;
+        border-bottom-left-radius: 5px !important;
+    }
+    .common-space {
+        justify-content: normal;
+    }
+    .course-box .card-body {
+        padding: 10px 15px;
+    }
+{% endblock %}
+
+<!-- Header Page Hierarchy-->
+{% block breadcrumb %}
+    <div class="container-fluid">
+        <div class="page-title">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3>Complaint Management</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/index">
+                            <svg class="stroke-icon">
+                                <use href="{% static 'assets/svg/icon-sprite.svg' %}#stroke-home"></use>
+                            </svg>
+                        </a></li>
+                        <li class="breadcrumb-item">Vehicle</li>
+                        <li class="breadcrumb-item active">Complaints</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+<!-- Header Page Hierarchy-->
+
+{% block content %}
+<div class="container-fluid main-companies">
+
+    <!-- Statistics Section -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card p-3">
+                <div class="text-center">
+                    <div class="stats-number">{{ total_complaints }}</div>
+                    <div><i class="fas fa-clipboard-list"></i> Total Complaints</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3">
+                <div class="text-center">
+                    <div class="stats-number text-warning">{{ pending_complaints }}</div>
+                    <div><i class="fas fa-clock"></i> Pending</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3">
+                <div class="text-center">
+                    <div class="stats-number text-success">{{ completed_complaints }}</div>
+                    <div><i class="fas fa-check-circle"></i> Completed</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form id="filterForm" method="GET" action="{% url 'manage-complaints' %}">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-2">
+                                <label class="form-label" for="status_filter">Status:</label>
+                                <select class="form-select" name="status" id="status_filter">
+                                    <option value="">All Status</option>
+                                    <option value="Pending" {% if request.GET.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                    <option value="Completed" {% if request.GET.status == 'Completed' %}selected{% endif %}>Completed</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="date_from" class="form-label">From Date</label>
+                                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ request.GET.date_from }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="date_to" class="form-label">To Date</label>
+                                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ request.GET.date_to }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="vehicle_search" class="form-label">Vehicle Code</label>
+                                <input type="text" class="form-control" id="vehicle_search" name="vehicle_code"
+                                       placeholder="Enter vehicle code" value="{{ request.GET.vehicle_code }}">
+                            </div>
+                            <div class="col-md-2 d-flex align-items-center justify-content-center">
+                                <button type="submit" class="btn btn-primary me-2">Filter</button>
+                                <a href="{% url 'manage-complaints' %}" class="btn btn-secondary">Reset</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complaints Table -->
+    <div class="row candidate-wrapper">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body candidates-box px-0">
+                    <div class="table-responsive custom-scrollbar">
+                        {% if complaints %}
+                            <table class="table" id="vehicle-monitoring-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Complaint ID</th>
+                                        <th>Vehicle Info</th>
+                                        <th>Complaint Type</th>
+                                        <!-- <th>Description</th> -->
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <!-- <th>Remarks</th> -->
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody_complaint_datatable">
+                                    {% for complaint in complaints %}
+                                        <tr>
+                                            <th scope="row">{{ forloop.counter }}</th>
+                                            <td>
+                                                <strong>{{ complaint.complaint_code|slice:":8" }}...</strong>
+                                                <br><small class="text-muted">{{ complaint.created_at|date:"M d, Y" }}</small>
+                                            </td>
+                                            <td>
+                                                <div class="common-f-start">
+                                                    <div class="attachment">
+                                                        <i class="fa-solid fa-car"></i>
+                                                        <div>
+                                                            <strong>{{ complaint.vehicle_code.vehicle_code }}</strong>
+                                                            {% if complaint.vehicle_code.register_no %}
+                                                                <br><small class="text-muted">{{ complaint.vehicle_code.register_no }}</small>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">
+                                                    {{ complaint.complaint_type|default:"N/A" }}
+                                                </span>
+                                            </td>
+                                            <!-- <td>
+                                                <div style="max-width: 200px; word-wrap: break-word;">
+                                                    {{ complaint.description|truncatewords:10|default:"No description" }}
+                                                </div>
+                                            </td> -->
+                                            <td>
+                                                {% if complaint.status == 'Pending' %}
+                                                    <span class="badge badge-light-warning">
+                                                        <i class="fas fa-clock"></i> Pending
+                                                    </span>
+                                                {% elif complaint.status == 'Completed' %}
+                                                    <span class="badge badge-light-success">
+                                                        <i class="fas fa-check"></i> Completed
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    {{ complaint.created_at|date:"M j, Y" }}<br>
+                                                    {{ complaint.created_at|time:"g:i A" }}
+                                                    {% if complaint.created_by %}
+                                                        <br>by {{ complaint.created_by }}
+                                                    {% endif %}
+                                                </small>
+                                            </td>
+                                            <!-- <td>
+                                                {% if complaint.remarks %}
+                                                    <div style="max-width: 150px; word-wrap: break-word;">
+                                                        {{ complaint.remarks|truncatewords:8 }}
+                                                    </div>
+                                                {% else %}
+                                                    <em class="text-muted">No remarks</em>
+                                                {% endif %}
+                                            </td> -->
+                                            <td>
+                                                <div class="d-flex">
+                                                    <button class="btn btn-primary me-2" data-bs-toggle="tooltip" title="Update"
+                                                            onclick="toggleUpdateForm('{{ complaint.complaint_code }}')">
+                                                        <i class="fa-solid fa-edit"></i>
+                                                    </button>
+                                                    <a href="{% url 'getspecificcomplaint' complaint.complaint_code %}"
+                                                       class="btn btn-info" data-bs-toggle="tooltip" title="View Details">
+                                                        <i class="fa-solid fa-eye"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <!-- Update Form Row (Hidden by default) -->
+                                        <tr id="update-form-{{ complaint.complaint_code }}" style="display: none;">
+                                            <td colspan="9">
+                                                <!-- Inside the update-form-{{ complaint.complaint_code }} section -->
+                                                <div class="update-form">
+                                                    <h6><i class="fas fa-edit"></i> Update Complaint: {{ complaint.complaint_code|slice:":8" }}...</h6>
+                                                    <form method="POST" action="{% url 'manage-complaints' %}">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="complaint_id" value="{{ complaint.complaint_code }}">
+                                                        <div class="mb-3">
+                                                            <label for="status-{{ complaint.complaint_code }}" class="form-label">Status:</label>
+                                                            <select class="form-select" id="status-{{ complaint.complaint_code }}" name="status">
+                                                                <option value="Pending" {% if complaint.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                                                <option value="Completed" {% if complaint.status == 'Completed' %}selected{% endif %}>Completed</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="remarks-{{ complaint.complaint_code }}" class="form-label">Remarks:</label>
+                                                            <textarea class="form-control" id="remarks-{{ complaint.complaint_code }}" name="remarks" rows="3">{{ complaint.remarks }}</textarea>
+                                                        </div>
+                                                        <div class="d-flex justify-content-end">
+                                                            <button type="button" class="btn btn-secondary me-2" onclick="toggleUpdateForm('{{ complaint.complaint_code }}')">Cancel</button>
+                                                            <button type="submit" class="btn btn-primary">Update Complaint</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <div class="no-complaints">
+                                <i class="fas fa-clipboard-list fa-4x mb-3" style="color: #dee2e6;"></i>
+                                <h4>No Complaints Found</h4>
+                                <p>There are no complaints matching your current filters.</p>
+{#                                <a href="{% url 'create_complaint_form' %}" class="btn btn-primary">#}
+{#                                    <i class="fas fa-plus"></i> Create New Complaint#}
+{#                                </a>#}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('.selectpicker').selectpicker();
+    });
+
+    function toggleUpdateForm(complaintId) {
+        var form = document.getElementById('update-form-' + complaintId);
+        if (form.style.display === 'none' || form.style.display === '') {
+            // Hide all other forms first
+            var allForms = document.querySelectorAll('[id^="update-form-"]');
+            allForms.forEach(function(f) {
+                f.style.display = 'none';
+            });
+            // Show the selected form
+            form.style.display = 'table-row';
+        } else {
+            form.style.display = 'none';
+        }
+    }
+
+    // Auto-hide success/error messages after 5 seconds
+    window.onload = function() {
+        var alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            setTimeout(function() {
+                alert.style.display = 'none';
+            }, 5000);
+        });
+    };
+</script>
+
+{% endblock %}
+
+
+<!-- Plugins JS start-->
+{% block PluginsJS %}
+
+    <script src="{% static "assets/js/datatable/datatables/jquery.dataTables.min.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/dataTables.select.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/select.bootstrap5.js" %}"></script>
+    <script src="{% static "assets/js/datatable/datatables/datatable.custom.js" %}"></script>
+    <script src="{% static "assets/js/sweet-alert/sweetalert.min.js" %}"></script>
+
+    <script src="{% static "assets/js/flat-pickr/flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/flat-pickr/custom-flatpickr.js" %}"></script>
+    <script src="{% static "assets/js/select/bootstrap-select.min.js" %}"></script>
+    <script src="{% static "assets/js/tooltip-init.js" %}"></script>
+
+{% endblock %}
+<!-- Plugins JS Ends-->
+
+
+{% block LeafletJS %}
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+            integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+            crossorigin=""></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/GoogleMutant/Leaflet.GoogleMutant.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/measure/L.MeasuringTool.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/PolylineMeasure/Leaflet.PolylineMeasure.js' %}"></script>
+    <script src="{% static 'assets/script/jslib/leaflet/plugins/styledLayerControl/styledLayerControl.js' %}"></script>
+    <!-- Dependency to Leaflet Draw -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://npmcdn.com/leaflet.path.drag/src/Path.Drag.js"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Editable/Leaflet.Editable.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.geometryutil.js" %}"></script>
+    <script src="{% static "assets/script/jslib/leaflet/plugins/Snap/leaflet.snap.js" %}"></script>
+
+    <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+
+{% endblock %}
